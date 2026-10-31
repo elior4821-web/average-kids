@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>הממוצע בעיני ילדים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+<style>
+/* Layout: full-screen slide deck on an ink "chalkboard"; a balance beam with an amber fulcrum (the mean) is the recurring motif. Phones get a separate one-column participation view (#join). */
+:root{
+  color-scheme:dark;
+  --bg:#10151e; --bg2:#151c28; --surface:#1b2331; --surface2:#222c3d; --line:#2e394c;
+  --fg:#ede9de; --muted:#9aa4b6; --faint:#6d778a;
+  --accent:#f0b443; --accent-soft:rgba(240,180,67,.14); --on-accent:#1b1406;
+  --sky:#7db9df; --navy:#2a4466; --good:#76d09c; --bad:#ef8170;
+  --a8:#3a5576; --a10:#5482ae; --a12:#80afd8; --a14:#c0ddf4;
+  --display:"Frank Ruhl Libre","David Libre",Georgia,serif;
+  --body:"IBM Plex Sans Hebrew","Rubik","Segoe UI",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.55;margin:0}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,[contenteditable]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ltr{direction:ltr;unicode-bidi:isolate}
+
+/* ---------- DECK ---------- */
+#deck{height:100%;display:flex;flex-direction:column;overflow:hidden}
+#stage{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;overflow-y:auto;padding-block:clamp(20px,4vh,48px) 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:none}
+.slide.on{display:block;animation:in .35s ease}
+@keyframes in{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide.on{animation:none}}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(14px,2.4vh,26px);min-height:100%}
+.eyebrow{font-size:.8rem;letter-spacing:.08em;color:var(--accent);font-weight:600;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow .tag{border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:1px 10px;letter-spacing:.02em;font-weight:500}
+.eyebrow .tag.act{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h2{font-size:clamp(1.8rem,3.6vw,3rem);font-weight:900}
+h3{font-size:clamp(1.1rem,1.7vw,1.4rem);font-weight:700}
+p{margin:0}
+.lead{font-size:clamp(1.05rem,1.55vw,1.3rem);color:var(--muted);max-width:62ch}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:clamp(14px,2vw,28px)}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(12px,1.6vw,22px)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(14px,1.8vw,24px);min-width:0}
+.panel.hl{border-color:var(--accent)}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+ul.clean{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+ul.clean li{padding-inline-start:22px;position:relative}
+ul.clean li::before{content:"";position:absolute;inset-inline-start:2px;top:.62em;width:9px;height:9px;border-radius:2px;background:var(--accent);transform:rotate(45deg)}
+.kbd{font-family:var(--mono);font-size:.8em;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px}
+
+/* title */
+.title-wrap{justify-content:center}
+.title-h{font-size:clamp(2.1rem,5vw,4.3rem);font-weight:900;letter-spacing:-.01em}
+.title-h em{font-style:normal;color:var(--accent)}
+.title-sub{font-size:clamp(1rem,1.6vw,1.3rem);color:var(--accent)}
+.title-en{font-family:var(--display);font-size:clamp(1rem,1.8vw,1.4rem);color:var(--muted);direction:ltr;text-align:right;font-weight:500}
+.byline{font-size:clamp(1rem,1.5vw,1.25rem)}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px 24px;border-top:1px solid var(--line);padding-top:16px}
+.field{display:flex;flex-direction:column;gap:2px}
+.field small{color:var(--faint);font-size:.75rem;letter-spacing:.06em}
+.field [contenteditable]{min-height:1.5em;border-bottom:1px dashed var(--line);padding:2px 0}
+.field [contenteditable]:empty::before{content:attr(data-ph);color:var(--faint)}
+
+/* balance beam */
+.beam svg{width:100%;height:auto;display:block;overflow:visible}
+.beam text{font-family:var(--mono);fill:var(--muted);font-size:13px}
+
+/* details */
+.facts{display:grid;grid-template-columns:auto 1fr;gap:12px 22px;align-items:baseline}
+.facts dt{color:var(--faint);font-size:.82rem;letter-spacing:.05em;white-space:nowrap}
+.facts dd{margin:0;font-size:clamp(1rem,1.4vw,1.2rem);min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg2);border-radius:99px;padding:5px 12px;display:inline-flex;gap:8px;align-items:baseline}
+.chip .en{color:var(--muted);font-size:.82em;direction:ltr}
+
+/* gap slide */
+.gap{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:stretch}
+.gap .vs{display:grid;place-items:center;font-family:var(--display);font-size:2rem;color:var(--faint)}
+.gap .side{display:flex;flex-direction:column;gap:8px}
+.gap .side .k{font-family:var(--mono);font-size:1.6rem;color:var(--sky)}
+.gap .side.u .k{color:var(--accent)}
+@media (max-width:820px){.gap{grid-template-columns:1fr}.gap .vs{display:none}}
+.goals{display:flex;flex-direction:column;gap:10px}
+.goal{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:baseline;padding:12px 14px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-soft)}
+.goal b{font-family:var(--display);font-weight:900;color:var(--accent);font-size:1.4rem}
+
+/* research paths */
+.paths{display:flex;flex-direction:column;gap:12px}
+.path{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;padding:14px 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.path.hl{border-color:var(--accent);background:var(--accent-soft)}
+.path .n{font-family:var(--display);font-weight:900;color:var(--accent);font-size:1.9rem;line-height:1}
+.path b{display:block;font-size:clamp(1.05rem,1.6vw,1.3rem)}
+.path span{color:var(--muted)}
+
+/* pillars */
+.temple{display:flex;flex-direction:column;gap:0}
+.roof{height:34px;background:linear-gradient(to bottom right,transparent 49.5%,var(--line) 50%) left/50.1% 100% no-repeat,linear-gradient(to bottom left,transparent 49.5%,var(--line) 50%) right/50.1% 100% no-repeat;opacity:.9}
+.pillars{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;border-top:3px solid var(--line);border-bottom:3px solid var(--line);padding-block:14px}
+@media (max-width:900px){.pillars{grid-template-columns:1fr}.roof{display:none}}
+.pillar{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pillar>h3{font-size:1rem;font-family:var(--body);font-weight:600;color:var(--muted);letter-spacing:.04em;text-align:center;border-bottom:1px solid var(--line);padding-bottom:6px}
+.pillar>h3 span{color:var(--faint);font-weight:400;direction:ltr;display:inline-block}
+.pillar.rep .prop{border-color:var(--accent)}
+.prop{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.letter{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:1.15rem;background:var(--bg2);border:1px solid var(--line);color:var(--accent);flex:none}
+.prop b{display:block;font-weight:600}
+.prop span{color:var(--muted);font-size:.9rem}
+
+/* method */
+.split{display:grid;grid-template-columns:3fr 2fr;gap:18px}
+@media (max-width:820px){.split{grid-template-columns:1fr}}
+.badge{display:inline-block;border-radius:99px;padding:2px 12px;font-size:.8rem;font-weight:600;background:var(--accent);color:var(--on-accent)}
+.badge.alt{background:transparent;color:var(--sky);border:1px solid var(--sky)}
+
+/* lab */
+.agerow{display:grid;grid-template-columns:70px 1fr 110px;gap:14px;align-items:center}
+.agerows{display:flex;flex-direction:column;gap:10px}
+.agerow.k b{color:var(--accent)}
+.dots{display:grid;grid-template-columns:repeat(20,1fr);gap:4px;direction:ltr}
+.dots i{aspect-ratio:1;border-radius:50%;max-width:100%}
+table.mx{border-collapse:separate;border-spacing:6px;width:100%}
+table.mx th{font-weight:600;color:var(--muted);font-size:.85rem;text-align:center}
+table.mx td{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;font-size:.92rem}
+table.mx td.na{color:var(--faint);border-style:dashed;background:transparent}
+.tablewrap{overflow-x:auto}
+
+/* flow */
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:stretch}
+.flow .arr{display:grid;place-items:center;color:var(--faint);font-size:1.6rem}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.step.hl{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.step .ic{font-family:var(--display);font-weight:900;font-size:2rem;color:var(--accent);line-height:1}
+@media (max-width:900px){.flow{grid-template-columns:1fr}.flow .arr{transform:rotate(-90deg)}}
+
+/* heatmap */
+table.heat{border-collapse:separate;border-spacing:4px;width:100%;min-width:420px}
+table.heat th{font-weight:600;color:var(--muted);font-size:.82rem;padding:4px}
+table.heat th.rowh{text-align:right;font-weight:500;color:var(--fg);font-size:.9rem;white-space:nowrap}
+table.heat td{border-radius:8px;text-align:center;font-family:var(--mono);font-weight:600;padding:9px 4px;font-size:1rem}
+
+/* stairs */
+.stairs{display:flex;flex-direction:column;gap:0}
+.stair{padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.stair.top{background:var(--accent);color:var(--on-accent);border-radius:14px 14px 0 0;margin-inline-end:28%}
+.stair.top .muted{color:rgba(27,20,6,.78)}
+.stair.bot{background:var(--navy);border-radius:0 0 14px 14px}
+.stair .ks{font-family:var(--mono);font-weight:600;font-size:1.4rem;direction:ltr;text-align:right}
+.stair h3{font-family:var(--body);font-weight:700;font-size:1.05rem}
+
+/* effects */
+.eff{display:flex;flex-direction:column;gap:8px}
+.eff .mark{font-size:1.6rem;line-height:1}
+.eff.yes{border-color:var(--accent)}
+.eff.yes .mark{color:var(--accent)}
+.eff.no .mark{color:var(--faint)}
+.callout{background:var(--navy);border-radius:14px;padding:16px 18px}
+
+/* misconception table */
+table.mis{width:100%;border-collapse:separate;border-spacing:0;min-width:620px}
+table.mis th,table.mis td{padding:12px 14px;vertical-align:top;text-align:right;border-bottom:1px solid var(--line)}
+table.mis tr:last-child td{border-bottom:0}
+table.mis th{font-size:.82rem;color:var(--muted);font-weight:600;letter-spacing:.03em}
+table.mis th.k,table.mis td.k{background:var(--accent-soft)}
+table.mis td.k{font-family:var(--display);font-size:1.05rem}
+table.mis td b{color:var(--accent);font-family:var(--mono)}
+.mcard{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:820px){.mcard{grid-template-columns:1fr}}
+.mcard h3{display:flex;gap:10px;align-items:center}
+.mlabel{font-size:.78rem;color:var(--faint);letter-spacing:.05em;font-weight:600}
+
+/* quotes */
+.quote{font-family:var(--display);font-size:clamp(1.05rem,1.6vw,1.3rem);line-height:1.4;border-inline-start:3px solid var(--accent);padding-inline-start:14px}
+
+/* activity common */
+.act-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.qr{background:#fff;padding:8px;border-radius:10px;width:136px;height:136px;display:grid;place-items:center;flex:none;border:0;cursor:zoom-in}
+.qr img,.qr canvas{width:120px!important;height:120px!important}
+.qrbox{display:flex;gap:12px;align-items:center}
+.qrbox .small{max-width:180px}
+.livepill{display:inline-flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:3px 12px;background:var(--bg2)}
+.livepill i{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.livepill.on i{background:var(--good);box-shadow:0 0 0 4px rgba(118,208,156,.15)}
+.btn{border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:8px 14px;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+.btn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.btn.sm{padding:4px 10px;font-size:.85rem;border-radius:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.stat small{display:block;color:var(--faint);font-size:.75rem;letter-spacing:.05em}
+.stat b{font-family:var(--mono);font-size:1.6rem;font-weight:600}
+.stat.hl{border-color:var(--accent)}
+.stat.hl b{color:var(--accent)}
+.sample-flag{font-size:.78rem;color:var(--on-accent);background:var(--sky);border-radius:6px;padding:1px 8px;font-weight:600}
+.manual{border-top:1px dashed var(--line);padding-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.manual input{background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:6px 10px;font-family:var(--mono);min-width:0;flex:1 1 200px}
+
+/* question sets */
+.taskchips{display:flex;gap:8px;flex-wrap:wrap}
+.taskchips button{border:1px solid var(--line);background:var(--bg2);border-radius:99px;padding:5px 14px;font-size:.9rem}
+.taskchips button.cur{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+.taskchips button .l{font-family:var(--mono);opacity:.7;margin-inline-end:6px}
+.story{font-family:var(--display);font-size:clamp(1.15rem,2vw,1.6rem);line-height:1.45;max-width:60ch}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:grid;grid-template-columns:minmax(120px,240px) 1fr 70px auto;gap:12px;align-items:center;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg2)}
+.opt .bar{height:14px;border-radius:7px;background:var(--surface2);overflow:hidden;direction:rtl}
+.opt .bar i{display:block;height:100%;background:var(--muted);border-radius:7px;transition:width .4s}
+.opt.correct{border-color:var(--good)}
+.opt.correct .bar i{background:var(--good)}
+.opt .cnt{font-family:var(--mono);text-align:left;color:var(--muted)}
+.opt .tally{display:flex;gap:4px}
+.opt .tally button{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--surface);padding:0;line-height:1}
+.reveal{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:820px){.reveal{grid-template-columns:1fr}.opt{grid-template-columns:1fr 70px}.opt .bar{grid-column:1/-1;grid-row:2}.opt .tally{grid-column:2;grid-row:1}.opt .cnt{display:none}}
+.agebars{display:flex;flex-direction:column;gap:8px}
+.ab{display:grid;grid-template-columns:64px 1fr 48px;gap:10px;align-items:center;font-size:.9rem}
+.ab .t{height:18px;border-radius:5px;background:var(--bg2);overflow:hidden;direction:rtl}
+.ab .t i{display:block;height:100%;border-radius:5px;transition:width .6s}
+.ab .v{font-family:var(--mono);text-align:left}
+.ab.you{font-weight:600}
+.ab.you .t i{background:var(--accent)}
+.why{border-inline-start:3px solid var(--good);padding-inline-start:12px}
+.quizgrid{display:grid;grid-template-columns:1fr 280px;gap:18px;align-items:start}
+@media (max-width:900px){.quizgrid{grid-template-columns:1fr}}
+.lb{display:flex;flex-direction:column;gap:6px}
+.lb .r{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:6px 10px;border-radius:8px;background:var(--bg2);border:1px solid transparent}
+.lb .r:first-child{background:var(--accent-soft);border-color:var(--accent)}
+.lb .r span:first-child{font-family:var(--mono);color:var(--faint)}
+.lb .r b{font-family:var(--mono);color:var(--accent)}
+.lb .r .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* sort board */
+.sortboard{display:flex;flex-direction:column;gap:8px}
+.srow{display:grid;grid-template-columns:44px minmax(160px,1.2fr) 2fr 110px;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.srow .split2{display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--bg2);direction:rtl}
+.srow .split2 .e{background:color-mix(in srgb,var(--good) 70%,var(--surface))}
+.srow .split2 .h{background:color-mix(in srgb,var(--bad) 70%,var(--surface))}
+.srow .res{font-size:.82rem;text-align:center;border-radius:99px;padding:2px 8px;border:1px solid var(--line);color:var(--faint)}
+.srow .res.easy{color:var(--good);border-color:var(--good)}
+.srow .res.hard{color:var(--bad);border-color:var(--bad)}
+.srow .res.mid{color:var(--sky);border-color:var(--sky)}
+.srow .tal{display:flex;gap:4px;justify-content:flex-end}
+.srow .lbl small{display:block;color:var(--faint);font-size:.78rem}
+@media (max-width:820px){.srow{grid-template-columns:40px 1fr 90px}.srow .split2{grid-column:1/-1}}
+.legend{display:flex;gap:16px;font-size:.85rem;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-inline-end:6px;vertical-align:-1px}
+
+/* ANOVA mini viz */
+.anova svg{width:100%;height:auto;display:block}
+.anova text{font-family:var(--body);fill:var(--muted);font-size:12px}
+
+/* biblio */
+.bib{display:flex;flex-direction:column;gap:14px;direction:ltr;text-align:left}
+.bib p{padding-left:2em;text-indent:-2em;font-size:clamp(.92rem,1.3vw,1.05rem);line-height:1.6}
+
+/* big QR overlay */
+#qrbig{position:fixed;inset:0;z-index:50;background:rgba(9,12,18,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));cursor:zoom-out}
+#qrbig .box{background:#fff;padding:3vmin;border-radius:18px;width:min(80vmin,820px);max-width:100%;aspect-ratio:1;display:grid;place-items:center}
+#qrbig .box img,#qrbig .box canvas{width:100%!important;height:100%!important;image-rendering:pixelated}
+#qrbig p{font-family:var(--display);font-size:clamp(1.2rem,2.6vw,2rem);text-align:center}
+
+/* bottom bar */
+#bar{flex:none;display:flex;align-items:center;gap:10px;padding-block:8px calc(8px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-top:1px solid var(--line);background:var(--bg2);position:relative;z-index:5}
+#bar .sp{flex:1}
+#bar .btn{padding:6px 12px}
+#prog{position:absolute;top:-1px;right:0;height:2px;background:var(--accent);transition:width .3s}
+#count{direction:ltr;font-family:var(--mono);color:var(--muted);font-size:.9rem;min-width:60px;text-align:center}
+#timer{font-family:var(--mono);font-size:.9rem;color:var(--muted)}
+#notes{position:absolute;inset-inline:0;bottom:0;max-height:46%;overflow-y:auto;background:var(--surface2);border-top:2px solid var(--accent);padding-block:16px 20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:4;box-shadow:0 -20px 40px rgba(0,0,0,.4)}
+#notes .in{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+#notes h4{margin:0;font-size:.8rem;letter-spacing:.08em;color:var(--accent);display:flex;justify-content:space-between}
+#notes .body{font-size:1.02rem;line-height:1.65}
+#notes .body p+p{margin-top:6px}
+.notes{display:none}
+@media (max-width:640px){#bar .hide-s{display:none}}
+
+/* ---------- JOIN (phone) ---------- */
+#join{max-width:560px;margin:0 auto;padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+.jhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.jhead h1{font-size:1.5rem;font-weight:900}
+.jhead h1 em{font-style:normal;color:var(--accent)}
+.nick{display:flex;flex-direction:column;gap:4px}
+.nick label{font-size:.8rem;color:var(--muted)}
+.nick input{background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--fg);padding:10px 12px;font:inherit}
+.jtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:4px}
+.jtabs button{border:0;background:transparent;border-radius:9px;padding:9px 2px;font-size:.88rem;color:var(--muted)}
+.jtabs button.cur{background:var(--surface2);color:var(--fg);font-weight:600}
+.jtabs button.live::after{content:" ●";color:var(--accent);font-size:.7em}
+.jcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.stepper{display:grid;grid-template-columns:64px 1fr 64px;gap:10px;align-items:center}
+.stepper button{height:64px;border-radius:14px;border:1px solid var(--line);background:var(--surface2);font-size:1.8rem}
+.stepper output{text-align:center;font-family:var(--mono);font-size:2.6rem;font-weight:600;color:var(--accent)}
+.jopts{display:flex;flex-direction:column;gap:8px}
+.jopts button{text-align:right;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);font-size:1.02rem}
+.jopts button.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.jopts button.ok{border-color:var(--good)}
+.jopts button.ok::after{content:" ✓";color:var(--good)}
+.jsrow{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.jsrow:last-child{border-bottom:0}
+.jsrow .letter{width:34px;height:34px;font-size:1rem}
+.jsrow b{display:block;font-weight:600;font-size:.95rem}
+.jsrow span{color:var(--muted);font-size:.82rem}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--bg2);padding:8px 12px;font-size:.9rem}
+.seg button.sel.e{background:color-mix(in srgb,var(--good) 30%,var(--bg2));color:var(--good);font-weight:600}
+.seg button.sel.h{background:color-mix(in srgb,var(--bad) 30%,var(--bg2));color:var(--bad);font-weight:600}
+.note{font-size:.85rem;color:var(--muted)}
+.saved{font-size:.82rem;color:var(--good)}
+</style>
+
+</head>
+<body>
+<div id="deck" dir="rtl">
+<div id="stage">
+
+<!-- 1 TITLE -->
+<section class="slide" data-t="0:15">
+<div class="wrap title-wrap">
+  <div class="eyebrow">סיכום ומפת דרכים מחקרית · Strauss &amp; Bichler, 1988</div>
+  <h1 class="title-h">התפתחות מושג <em>הממוצע החשבוני</em> אצל ילדים</h1>
+  <p class="title-en">The Development of Children's Concepts of the Arithmetic Average</p>
+  <p class="title-sub">גשר בין תיאוריה התפתחותית לחקר תפיסות שגויות בכיתה ה׳</p>
+  <p class="byline">סידני שטראוס ואפרים ביכלר · <span class="num">1988</span></p>
+  <div class="beam" data-beam="5,10,20,25" data-cap="5, 10, 20, 25 סוכריות · הממוצע 15 הוא נקודת האיזון"></div>
+  <div class="fields">
+    <div class="field"><small>קורס</small><div contenteditable="true" id="f-course" data-ph="[שם הקורס]"></div></div>
+    <div class="field"><small>מרצה</small><div contenteditable="true" id="f-lect" data-ph="[שם המרצה]"></div></div>
+    <div class="field"><small>מגיש/ה</small><div contenteditable="true" id="f-pres" data-ph="[שם המגיש/ה]"></div></div>
+    <div class="field"><small>תאריך</small><div contenteditable="true" id="f-date" data-ph="[תאריך]"></div></div>
+  </div>
+</div>
+<div class="notes"><p>פתיחה קצרה: היום אציג מאמר משנת 1988 של שטראוס וביכלר מאוניברסיטת תל אביב, על איך ילדים בגילים 8 עד 14 מבינים את הממוצע החשבוני, ומה זה אומר על תלמידי כיתה ה׳.</p><p>הציור למטה הוא המוטיב של המצגת: הממוצע הוא נקודת האיזון של הנתונים. (שדות הקורס, המרצה והתאריך ניתנים לעריכה בלחיצה.)</p></div>
+</section>
+
+<!-- 2 LIVE EXPERIMENT -->
+<section class="slide" data-act="hw" data-t="1:30">
+<div class="wrap">
+  <div class="act-head">
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0;flex:1 1 380px">
+      <div class="eyebrow"><span class="tag act">פעילות 1 · ניסוי חי</span><span class="livepill" data-live><i></i><span>מתחבר…</span></span></div>
+      <h2>כמה שעות למדתם אתמול?</h2>
+      <p class="lead">סרקו את הקוד, הקלידו את מספר השעות שהקדשתם אתמול ללימודים ולמטלות (גם <span class="num">0</span> זו תשובה). עכשיו: איך מתארים את כל הכיתה במספר אחד?</p>
+    </div>
+    <div class="qrbox"><button class="qr" data-qr aria-label="הגדלת קוד ה-QR"></button><p class="small muted">לחצו על הקוד<br>כדי להגדיל אותו</p></div>
+  </div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row" style="justify-content:space-between"><div class="row"><b>הכיתה שלנו</b><span class="sample-flag" id="hw-sample" hidden>נתוני דוגמה – יוחלפו בתשובות שלכם</span></div>
+      <div class="row"><button class="btn sm" id="hw-zero">מה אם נתעלם מהאפסים?</button><button class="btn sm" id="hw-out">הוסיפו ערך קיצון: 12</button></div></div>
+    <div class="beam" id="hw-beam"></div>
+    <div class="stats" id="hw-stats"></div>
+    <div class="manual"><span class="small muted">הזנה ידנית (בלי טלפונים):</span><input id="hw-manual" inputmode="decimal" placeholder="למשל: 2, 0, 3, 1.5"><button class="btn sm" id="hw-clear">ניקוי</button></div>
+  </div>
+</div>
+<div class="notes"><p>(1:30) לוחצים על הקוד כדי להגדיל אותו לכל המסך (או מקש Q), ומבקשים מכולם לסרוק ולהזין מספר. בזמן שהתשובות נכנסות שואלים: "איך הייתם מתארים את הכיתה במספר אחד?"</p><p>אחר כך "מה אם נתעלם מהאפסים?": הממוצע קופץ. זו תכונה F. "ערך קיצון" מראה שכל ערך משפיע (C), ושהממוצע נשאר בין הקטן לגדול (A).</p><p>מעבר: "לנו זה ברור. לילדים בני 8? בואו נראה."</p></div>
+</section>
+
+<!-- 3 ARTICLE DETAILS -->
+<section class="slide" data-t="0:45">
+<div class="wrap">
+  <div class="eyebrow">פרטי המאמר</div>
+  <h2>על המאמר</h2>
+  <div class="grid2">
+    <dl class="facts panel">
+      <dt>שם המאמר</dt><dd><span class="ltr" style="display:block;text-align:right;font-family:var(--display)">The Development of Children's Concepts of the Arithmetic Average</span><span class="muted small">התפתחות מושג הממוצע החשבוני אצל ילדים</span></dd>
+      <dt>כותבים</dt><dd>Sidney Strauss ו-Efraim Bichler<br><span class="muted small">אוניברסיטת תל אביב. המאמר מבוסס על עבודת התזה של ביכלר בהנחיית שטראוס.</span></dd>
+      <dt>שנת פרסום</dt><dd class="num" style="font-size:1.6rem;color:var(--accent)">1988</dd>
+      <dt>כתב עת</dt><dd><span class="ltr"><i>Journal for Research in Mathematics Education</i>, 19(1), 64–80</span></dd>
+    </dl>
+    <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+      <h3>מילות מפתח</h3>
+      <div class="chips">
+        <span class="chip">ממוצע חשבוני <span class="en">arithmetic mean</span></span>
+        <span class="chip">תכונות הממוצע <span class="en">properties of the average</span></span>
+        <span class="chip">התפתחות קוגניטיבית <span class="en">cognitive development</span></span>
+        <span class="chip">תפיסות שגויות <span class="en">misconceptions</span></span>
+        <span class="chip">ידע של שכל ישר <span class="en">commonsense knowledge</span></span>
+        <span class="chip">מודל התפתחותי להוראה <span class="en">developmental model of instruction</span></span>
+      </div>
+      <p class="small muted">במאמר המקורי אין רשימת מילות מפתח. המילים כאן נבחרו מתוך תוכן המאמר.</p>
+    </div>
+  </div>
+</div>
+<div class="notes"><p>(0:45) שם, כותבים, שנה וכתב העת. JRME הוא אחד מכתבי העת המרכזיים בחינוך מתמטי.</p><p>לציין בגלוי: במאמר אין מילות מפתח רשמיות, אז בחרתי אותן מתוך התוכן.</p></div>
+</section>
+
+<!-- 4 THE GAP -->
+<section class="slide" data-t="0:45">
+<div class="wrap">
+  <div class="eyebrow">במה המאמר עוסק?</div>
+  <h2>הנושא המרכזי: הפער בין חישוב להבנה</h2>
+  <div class="gap">
+    <div class="panel side"><span class="k ltr">Σx ÷ n</span><h3>חישוב</h3><p class="muted">ילדים, ואפילו סטודנטים, יודעים לחשב ממוצע: מחברים ומחלקים.</p></div>
+    <div class="vs">≠</div>
+    <div class="panel side u"><span class="k">?</span><h3>הבנה</h3><p class="muted">אבל לעיתים קרובות הם לא מבינים את המשמעות של מה שהם מחשבים (Pollatsek ועמיתיו, 1981; Mevarech, 1983).</p></div>
+  </div>
+  <div class="goals">
+    <p class="small muted">מטרות המחקר המרכזיות</p>
+    <div class="goal"><b>1</b><span>לבחון את ההתפתחות הנורמטיבית של הבנת תכונות הממוצע מגיל <span class="num">8</span> עד <span class="num">14</span>.</span></div>
+    <div class="goal"><b>2</b><span>לבדוק אם סוג החומר (רציף/בדיד) ואמצעי ההצגה (סיפורי/מוחשי/מספרי) משפיעים על הבנה זו.</span></div>
+  </div>
+</div>
+<div class="notes"><p>(0:45) הרעיון המרכזי: בגלל שהחישוב פשוט, נדמה שגם המושג פשוט. מחקרים קודמים הראו שגם סטודנטים מחשבים בלי להבין.</p><p>זה היה המחקר ההתפתחותי הראשון על הממוצע אצל ילדים. המסגרת: "מודל התפתחותי להוראה" של שטראוס. צריך להכיר את ציוני הדרך ההתפתחותיים כדי ללמד נכון.</p></div>
+</section>
+
+<!-- 5 RESEARCH QUESTIONS -->
+<section class="slide" data-t="0:30">
+<div class="wrap">
+  <div class="eyebrow">שאלות המחקר</div>
+  <h2>שאלות המחקר המרכזיות</h2>
+  <div class="paths">
+    <div class="path"><span class="n">1</span><div><b>אמצעי ההצגה</b><span>האם יש הבדל בקושי המשימות כאשר הן מוצגות כסיפור היפותטי, בצורה מוחשית או באופן מספרי?</span></div></div>
+    <div class="path"><span class="n">2</span><div><b>סוג הכמות</b><span>האם יש הבדל בהבנה בין משימות עם כמות רציפה (פלסטלינה, אדמה) לכמות בדידה (לגו, תפוחי אדמה)?</span></div></div>
+    <div class="path hl"><span class="n">3</span><div><b>נתיבי התפתחות</b><span>האם יש מסלולי התפתחות שונים להבנת שבע התכונות של הממוצע בגילים שונים?</span></div></div>
+  </div>
+  <p class="small muted">החוקרים ניסחו שאלות כלליות ולא השערות, כי זה היה המחקר הראשון בתחום ולא היה בסיס לניבוי.</p>
+</div>
+<div class="notes"><p>(0:30) שלוש שאלות. השלישית היא הלב של המחקר. אין השערות, כי זה מחקר חלוצי.</p></div>
+</section>
+
+<!-- 6 SEVEN PROPERTIES -->
+<section class="slide" data-t="1:00">
+<div class="wrap">
+  <div class="eyebrow">המושג המרכזי</div>
+  <h2>האנטומיה של הממוצע: שבע התכונות</h2>
+  <div class="temple">
+    <div class="roof" aria-hidden="true"></div>
+    <div class="pillars">
+      <div class="pillar"><h3>סטטיסטי <span>(Statistical)</span></h3>
+        <div class="prop"><span class="letter">A</span><div><b>נמצא בין ערכי הקיצון</b><span>לא קטן מהקטן ביותר ולא גדול מהגדול ביותר.</span></div></div>
+        <div class="prop"><span class="letter">B</span><div><b>סכום הסטיות מהממוצע הוא אפס</b><span class="ltr" style="display:block;text-align:right">7, 5, 3 → 5: (+2) + 0 + (−2) = 0</span></div></div>
+        <div class="prop"><span class="letter">C</span><div><b>מושפע מכל ערך בקבוצה</b><span>הממוצע של 0, 5, 10 הוא 5. מוסיפים 10 והוא עולה ל-6.25.</span></div></div>
+      </div>
+      <div class="pillar"><h3>מופשט <span>(Abstract)</span></h3>
+        <div class="prop"><span class="letter">D</span><div><b>לא חייב להיות שווה לאחד הערכים</b><span>הממוצע של 1 ו-3 הוא 2.</span></div></div>
+        <div class="prop"><span class="letter">E</span><div><b>יכול להיות שבר בלי מקבילה במציאות</b><span>1.6 ילדים למשפחה.</span></div></div>
+        <div class="prop"><span class="letter">F</span><div><b>ערך אפס חייב להיכנס לחישוב</b><span>גם ימים בלי שיעורי בית נספרים.</span></div></div>
+      </div>
+      <div class="pillar rep"><h3>ייצוגי <span>(Representative)</span></h3>
+        <div class="prop"><span class="letter">G</span><div><b>מייצג את הקבוצה כולה</b><span>הערך הקרוב ביותר לכל שאר הערכים.</span></div></div>
+        <div class="beam panel" data-beam="3,5,7" data-cap="תכונה B: הסטיות +2 ו-−2 מתקזזות"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="notes"><p>(1:00) שלושה עמודים: סטטיסטי (A–C, בסיס הממוצע כפונקציה מתמטית), מופשט (D–F, מאפשר ערכים שלא נצפו), וייצוגי (G, לפי Moroney זו מהות הממוצע).</p><p>להצביע על הציור: B היא "חוק הנדנדה". העודף בצד אחד שווה לחוסר בצד השני. בסוף המצגת יהיה בוחן קצר על כל שבע התכונות.</p></div>
+</section>
+
+<!-- 7 METHOD TYPE -->
+<section class="slide" data-t="0:30">
+<div class="wrap">
+  <div class="eyebrow">שיטת המחקר</div>
+  <h2>כמותני, עם רובד איכותני</h2>
+  <div class="grid2">
+    <div class="panel" style="display:flex;flex-direction:column;gap:10px"><span class="badge" style="align-self:flex-start">עיקר המחקר: כמותני</span>
+      <ul class="clean"><li>כל תשובה קיבלה ציון: שיפוט נכון = <span class="num">2</span>, שגוי = <span class="num">1</span>.</li><li>חושבו אחוזי הצלחה לכל תכונה ולכל קבוצת גיל.</li><li>ניתוח שונות (ANOVA) השווה בין גילים, תכונות, אמצעי הצגה וסוגי כמות.</li><li>מחקר חתך: ארבע קבוצות גיל בנקודת זמן אחת.</li></ul></div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:10px"><span class="badge alt" style="align-self:flex-start">רובד משלים: איכותני</span>
+      <ul class="clean"><li>אחרי כל תשובה המראיין שאל: "למה אתה חושב ש…?"</li><li>הנימוקים (Justifications) נרשמו, מוינו לקטגוריות ונספרו.</li><li>לפי החוקרים, ההבנה האמיתית נקבעת לפי סוג הנימוק ולא רק לפי נכונות התשובה.</li></ul></div>
+  </div>
+</div>
+<div class="notes"><p>(0:30) התשובה לשאלה "כמותני או איכותני": בעיקר כמותני (ציונים, אחוזים, ANOVA), עם רובד איכותני של ניתוח הנימוקים. גם הנימוקים הוצגו בסוף כמותית, בטבלאות שכיחות.</p></div>
+</section>
+
+<!-- 8 THE LAB -->
+<section class="slide" data-t="0:45">
+<div class="wrap">
+  <div class="eyebrow">מתודולוגיה · משתתפים</div>
+  <h2>המעבדה: המשתתפים ומערך המחקר</h2>
+  <div class="grid2">
+    <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+      <h3><span class="num" style="color:var(--accent)">80</span> ילדים, <span class="num">20</span> בכל קבוצת גיל</h3>
+      <div class="agerows" id="sample-rows"></div>
+      <ul class="clean small"><li>ממעמד הביניים, ברמת השרון. חלוקה שווה בין בנים לבנות.</li><li><b>נקודת הציון הקריטית:</b> בישראל לומדים לחשב ממוצע באופן רשמי בגיל 12. בני 8 ו-10 פעלו מתוך אינטואיציה בלבד.</li></ul>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+      <h3>מערך המחקר (מטריצה)</h3>
+      <div class="tablewrap"><table class="mx">
+        <tr><th></th><th>בדיד (לגו, תפוחי אדמה)</th><th>רציף (פלסטלינה, אדמה)</th></tr>
+        <tr><th>סיפורי</th><td>✓</td><td>✓</td></tr>
+        <tr><th>מוחשי</th><td>✓</td><td>✓</td></tr>
+        <tr><th>מספרי</th><td class="na">–</td><td>✓</td></tr>
+      </table></div>
+      <p class="small muted">סוג חומר × אמצעי הצגה. המספרי קיים רק ברציף, ותכונה E רק בבדיד.</p>
+    </div>
+  </div>
+</div>
+<div class="notes"><p>(0:45) 80 ילדים, 20 בכל גיל: 8, 10, 12, 14 (גיל ממוצע בחודשים: 96, 120, 143, 166). גיל 12 מסומן כי זה הגיל שבו לומדים את החישוב. בני 8 ו-10 עוד לא למדו, אז הם עונים מהשכל הישר.</p><p>המטריצה מראה את שני המשתנים שנבדקו: סוג חומר ואמצעי הצגה.</p></div>
+</section>
+
+<!-- 9 TOOLS -->
+<section class="slide" data-t="0:45">
+<div class="wrap">
+  <div class="eyebrow">מתודולוגיה · כלי המחקר</div>
+  <h2>כלי המחקר וההליך: מדידת "שכל ישר"</h2>
+  <div class="flow">
+    <div class="step"><span class="ic num">32</span><h3>משימות ייעודיות</h3><p class="muted small">נבנו בקפידה למדוד כל אחת מהתכונות בלי הפעלת אלגוריתם מתמטי. 5 משימות לכל תכונה, 2 לתכונה E.</p></div>
+    <span class="arr">←</span>
+    <div class="step"><span class="ic">⊘</span><h3>בלי המילה "ממוצע"</h3><p class="muted small">המילה הושמטה במכוון, כדי למנוע הישענות על ידע טכני מבית הספר (school-learned knowledge) ולעודד חשיבה יומיומית (commonsense).</p></div>
+    <span class="arr">←</span>
+    <div class="step hl"><span class="ic">?</span><h3>"למה אתה חושב כך?"</h3><p class="muted small">ההבנה נמדדה לפי הנימוק (Justification) שהילד סיפק, ולא רק לפי נכונות התשובה.</p></div>
+  </div>
+  <p class="small muted">ריאיון אישי של 30–60 דקות עם אחד משני מראיינים · בובות, לגו ופלסטלינה במשימות המוחשיות · ניסוח אחיד ומספרים קטנים · סדר אקראי.</p>
+</div>
+<div class="notes"><p>(0:45) שלושה עקרונות בכלי המחקר: משימות שלא דורשות חישוב, בלי המילה "ממוצע", ותמיד "למה?". במשימה הבאה תרגישו בעצמכם איך זה נראה.</p></div>
+</section>
+
+<!-- 10 THINK LIKE A CHILD -->
+<section class="slide" data-act="task" data-t="2:15">
+<div class="wrap">
+  <div class="act-head">
+    <div style="display:flex;flex-direction:column;gap:10px;flex:1 1 380px;min-width:0">
+      <div class="eyebrow"><span class="tag act">פעילות 2 · תחשבו כמו ילד בן 8</span><span class="livepill" data-live><i></i><span>מתחבר…</span></span></div>
+      <div class="taskchips" id="task-chips"></div>
+    </div>
+    <div class="qrbox"><button class="qr" data-qr aria-label="הגדלת קוד ה-QR"></button></div>
+  </div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:16px">
+    <p class="story" id="task-story"></p>
+    <div class="opts" id="task-opts"></div>
+    <div class="row" style="justify-content:space-between"><span class="small muted" id="task-n"></span><button class="btn pri" id="task-reveal">חשיפה</button></div>
+    <div class="reveal" id="task-rev" hidden>
+      <div class="agebars" id="task-ages"></div>
+      <div style="display:flex;flex-direction:column;gap:10px"><p class="why" id="task-why"></p><p class="small muted">אחוז הילדים שענו נכון על המשימה הזו (סיפור, כמות בדידה), לפי טבלה 3 במאמר.</p></div>
+    </div>
+  </div>
+</div>
+<div class="notes"><p>(2:15) חמש משימות מקוריות מהמאמר (בתרגום). לכל משימה: קוראים בקול, נותנים 20 שניות, רואים את תשובות הכיתה, ואז "חשיפה".</p><p>הסדר: תפוחי אדמה (A), כדורים (E), עוגיות (B), ואז זוג הסוכריות (G ואחריו F). במאמר, משימת F תמיד הגיעה מיד אחרי G.</p><p>הרגע החזק: העוגיות (B). רק 5–15% מהילדים צדקו, גם בגיל 14.</p></div>
+</section>
+
+<!-- 11 SORT -->
+<section class="slide" data-act="sort" data-t="1:00">
+<div class="wrap">
+  <div class="act-head">
+    <div style="display:flex;flex-direction:column;gap:10px;flex:1 1 380px;min-width:0">
+      <div class="eyebrow"><span class="tag act">פעילות 3 · מיון</span><span class="livepill" data-live><i></i><span>מתחבר…</span></span></div>
+      <h2>אילו תכונות קשות לילדים?</h2>
+      <p class="lead">סמנו בטלפון כל תכונה כ"קלה" או "קשה" לילדים בגילים 8–14. אחר כך נשווה לממצאים.</p>
+    </div>
+    <div class="qrbox"><button class="qr" data-qr aria-label="הגדלת קוד ה-QR"></button></div>
+  </div>
+  <div class="legend"><span><i style="background:color-mix(in srgb,var(--good) 70%,var(--surface))"></i>הכיתה: קל</span><span><i style="background:color-mix(in srgb,var(--bad) 70%,var(--surface))"></i>הכיתה: קשה</span><span id="sort-n" class="num"></span></div>
+  <div class="sortboard" id="sortboard"></div>
+  <div class="row"><button class="btn pri" id="sort-reveal">חשיפה: מה מצא המחקר?</button></div>
+</div>
+<div class="notes"><p>(1:00) כל אחד ממיין בטלפון. אחרי שרוב התשובות נכנסו, "חשיפה".</p><p>הממצא: A, C, D קלות; B, F, G קשות. E לא נכללה בניתוח השונות (קיימת רק בכמות בדידה), והיא קשה רק לבני 8.</p></div>
+</section>
+
+<!-- 12 ANALYSIS TOOLS -->
+<section class="slide" data-t="0:45">
+<div class="wrap">
+  <div class="eyebrow">באמצעות מה הוצגו הממצאים?</div>
+  <h2>טבלאות, ניתוח שונות ושכיחויות</h2>
+  <div class="split">
+    <div class="panel"><ul class="clean">
+      <li><b>טבלה 1:</b> ממוצעים וסטיות תקן של הציונים לכל תכונה ולכל גיל.</li>
+      <li><b>טבלה 2:</b> ניתוח שונות <span class="ltr">4 × 6 × 2 × 2</span> במדידות חוזרות, ומבחן המשך שפה (Scheffé) ברמת מובהקות <span class="num ltr">α = .01</span>.</li>
+      <li><b>טבלה 3:</b> אחוז הילדים שענו נכון, לפי גיל, תכונה, אמצעי הצגה וסוג כמות.</li>
+      <li><b>טבלאות 4–10:</b> שכיחות סוגי הנימוקים לשיפוטים נכונים ושגויים, לכל תכונה.</li>
+    </ul></div>
+    <div class="panel anova" style="display:flex;flex-direction:column;gap:10px">
+      <h3>ANOVA בדקה אחת</h3>
+      <svg viewBox="0 0 360 120" role="img" aria-label="שלוש קבוצות עם ממוצעים שונים ופיזור קטן בתוכן"><g id="anova-svg"></g></svg>
+      <p class="small">השאלה: האם ההבדלים <b>בין</b> ממוצעי הקבוצות גדולים מהפיזור <b>בתוך</b> כל קבוצה? <span class="ltr num">F = בין ÷ בתוך</span>. F גדול פירושו הבדל מובהק.</p>
+      <p class="small muted"><span class="ltr">4×6×2×2</span> = 4 גילים × 6 תכונות (E הוצאה) × 2 אמצעים (המספרי הוצא) × 2 סוגי כמות. "מדידות חוזרות": כל ילד פתר את כל סוגי המשימות.</p>
+    </div>
+  </div>
+</div>
+<div class="notes"><p>(0:45) הממצאים הוצגו בעזרת טבלאות ממוצעים, ניתוח שונות (ANOVA), אחוזי הצלחה ושכיחויות של נימוקים.</p><p>ANOVA בפשטות, עם הציור: אם המרחק בין הקבוצות גדול לעומת הפיזור בתוכן, ההבדל מובהק. מבחן שפה בודק אילו קבוצות בדיוק שונות זו מזו.</p></div>
+</section>
+
+<!-- 13 MAIN FINDINGS -->
+<section class="slide" data-t="0:30">
+<div class="wrap">
+  <div class="eyebrow">ממצאי המחקר</div>
+  <h2>הממצאים העיקריים: מה באמת משפיע?</h2>
+  <div class="grid2">
+    <div class="panel eff yes"><span class="mark">✓</span><h3>השפעה מובהקת: גיל (Age) ותכונה (Property)</h3><p class="muted">הבנת תכונות הממוצע משתנה ומתפתחת באופן מובהק וברור ככל שהגיל עולה. כל קבוצות הגיל נבדלו זו מזו.</p></div>
+    <div class="panel eff no"><span class="mark">✕</span><h3>ללא השפעה: אמצעי ההצגה וסוג הכמות</h3><p class="muted">סיפור, מוחשי או מספרי, רציף או בדיד: לא נמצאו הבדלים מובהקים בקושי המשימות.</p></div>
+  </div>
+  <div class="callout"><b>הסיבה האפשרית:</b> כל המשימות לוו בהסבר מילולי חזק ובניסוח אחיד, ש"החליק" את ההבדלים בין החומרים השונים. בנוסף, הכמות הרציפה חולקה ליחידות (ק״ג).</div>
+</div>
+<div class="notes"><p>(0:30) התשובות לשאלות המחקר: שאלות 1 ו-2 לא (אין הבדל באמצעי ובכמות), שאלה 3 כן. נמצאה גם אינטראקציה גיל × תכונה, אבל מבחן שפה לא מצא בה הבדלים מובהקים.</p></div>
+</section>
+
+<!-- 14 TWO LEVELS -->
+<section class="slide" data-t="1:00">
+<div class="wrap">
+  <div class="eyebrow">ממצאי המחקר</div>
+  <h2>שתי רמות של קושי קוגניטיבי</h2>
+  <div class="grid2">
+    <div class="stairs">
+      <div class="stair top"><h3>התכונות ה"קשות" (התפתחו לאט ומאוחר יותר)</h3><span class="ks">B · F · G</span><span class="muted small">סכום הסטיות שווה אפס · חובה לקחת בחשבון אפס · ייצוגיות הנתונים</span></div>
+      <div class="stair bot"><h3>התכונות ה"קלות" (הושגו מוקדם)</h3><span class="ks">A · C · D</span><span class="muted small">ממוקם בין ערכי הקיצון · מושפע משינוי ערכים · לא חייב להיות שווה לאחד הערכים. הובנו היטב כבר על ידי רוב בני 10 ו-12.</span></div>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:8px;min-width:0">
+      <p class="small muted">אחוז השיפוטים הנכונים, ממוצע על פני סוגי המשימות (מחושב מטבלה 3)</p>
+      <div class="tablewrap"><table class="heat" id="heat"></table></div>
+    </div>
+  </div>
+</div>
+<div class="notes"><p>(1:00) מבחן שפה הראה שתי קבוצות של תכונות. במפת החום: A, C, D מתבהרות מהר; B כמעט לא זזה (גם בגיל 14 רק כשליש); G מזנקת רק אחרי גיל 10; F אפילו יורדת מעט בין 8 ל-10 (27% מול 21%).</p><p>E לא נכללה בניתוח, אבל רואים שהיא קשה רק לבני 8.</p></div>
+</section>
+
+<!-- 15 MISCONCEPTIONS 1 -->
+<section class="slide" data-t="0:45">
+<div class="wrap">
+  <div class="eyebrow">ממצאי המחקר · הנימוקים</div>
+  <h2>אנטומיה של תפיסות שגויות (חלק 1): ייצוג ואפס</h2>
+  <p class="lead">תכונות G (ייצוגיות) ו-F (אפס): קשות במיוחד לילדים צעירים.</p>
+  <div class="panel tablewrap" style="padding:0">
+    <table class="mis">
+      <tr><th>התכונה במציאות</th><th>הטעות הנפוצה</th><th class="k">ההצדקה של הילד (Social Reason)</th></tr>
+      <tr><td><b>G</b> · בחירת הערך האמצעי כמייצג</td><td>בחירת הערך הגדול ביותר כייצוגי (בסוכריות: 25)</td><td class="k">"25, כי הם הביאו הרבה, כדי שלכולם יהיו הרבה סוכריות."</td></tr>
+      <tr><td><b>F</b> · התחשבות באפס בחישוב הכולל</td><td>התעלמות מערך של אפס (מאיה שלא הביאה)</td><td class="k">"את האפס לא צריך לחשב, כי כשמחברים לא מוסיפים אפס."</td></tr>
+    </table>
+  </div>
+  <div class="callout"><b>התובנה:</b> הילד משתמש במספר הגדול כ"תווית" לקבוצה, שמבטאת רצון חברתי שיהיה מספיק לכולם, ולא כנקודת מרכז כובד מתמטית. הנימוק החברתי הופיע בעיקר בגיל 8, ב-F וב-G.</div>
+</div>
+<div class="notes"><p>(0:45) כאן רואים שהטעות היא לא "טעות חישוב" אלא היגיון אחר: היגיון חברתי. הציטוטים הם פרפרזה בעברית לנימוקים שהמאמר מתאר.</p><p>ב-G רוב התשובות הנכונות התבססו על בחירת הערך האמצעי, ורק חלק על חישוב.</p></div>
+</section>
+
+<!-- 16 MISCONCEPTIONS 2 -->
+<section class="slide" data-t="0:45">
+<div class="wrap">
+  <div class="eyebrow">ממצאי המחקר · הנימוקים</div>
+  <h2>אנטומיה של תפיסות שגויות (חלק 2): שברים ואיזון</h2>
+  <div class="panel mcard">
+    <div style="display:flex;flex-direction:column;gap:8px"><h3><span class="letter">E</span>שבר בלי מקביל פיזי</h3><span class="mlabel">ההצדקה של הילד</span><p class="quote">"זה לא הגיוני, לא מעשי לחתוך כדור."</p></div>
+    <div style="display:flex;flex-direction:column;gap:8px;justify-content:flex-end"><span class="mlabel">הדיסוננס</span><p>התנגשות בין עולם המתמטיקה המופשט למציאות הפיזית: קשה לקבל ממוצע של "שליש כדורגל לכל ילד". בגיל 8 כ-43% צדקו, ומגיל 12 כמעט כולם.</p></div>
+  </div>
+  <div class="panel mcard hl">
+    <div style="display:flex;flex-direction:column;gap:8px"><h3><span class="letter">B</span>סכום הסטיות שווה אפס: הקשה ביותר</h3><span class="mlabel">ההצדקה</span><p class="quote">"אי אפשר לדעת. לא יודעים כמה עוגיות היו וכמה ילדים."</p></div>
+    <div style="display:flex;flex-direction:column;gap:8px;justify-content:flex-end"><span class="mlabel">הדיסוננס</span><p>ילדים התקשו מאוד לתפוס את עיקרון האיזון (עודף שווה לחוסר). נימוק "חסר מידע" הופיע ב-36%–55% מהנימוקים בכל גיל. ניסוח העיקרון עצמו הופיע רק בגיל 14 (17%), הרבה אחרי שלמדו לחשב ממוצע.</p></div>
+  </div>
+</div>
+<div class="notes"><p>(0:45) E: הקושי הוא דיסוננס בין מתמטיקה למציאות. B: הקשה מכולן. הנימוק "אין מספיק מידע" הופיע גם ב-A אצל הצעירים. זה הדפוס המשותף ל-A ול-B.</p></div>
+</section>
+
+<!-- 17 CONCLUSIONS -->
+<section class="slide" data-t="0:45">
+<div class="wrap">
+  <div class="eyebrow">מסקנות המחקר</div>
+  <h2>מסקנות והשלכות להוראה</h2>
+  <div class="grid3">
+    <div class="panel"><h3>אלגוריתם אינו ערובה להבנה</h3><p class="muted">היכולת לחשב ממוצע בגיל 12 לא הובילה אוטומטית להבנת התכונות המורכבות שלו, כמו תכונה B.</p></div>
+    <div class="panel"><h3>יש ללמד את התכונות במפורש</h3><p class="muted">תוכנית הלימודים צריכה לעסוק באופן פעיל במשמעות המושגית של הממוצע ובנימוקי הילדים, ולא רק בנוסחת החישוב.</p></div>
+    <div class="panel hl"><h3>תזמון כפול (Two-Stage Curriculum)</h3><p class="muted">לאור שתי רמות הקושי, החוקרים מציעים לבנות יחידות לשני שלבים מותאמי-גיל: קודם התכונות ה"קלות", ומאוחר יותר ה"קשות".</p></div>
+  </div>
+  <p class="small muted">מסקנות נוספות: יש מסלולי התפתחות שונים לתכונות שונות. ההבדלים בקושי נובעים לדעת החוקרים ממורכבות התכונות עצמן, אבל זו "אמונה" שצריך לבדוק. המשך: שטראוס ופרלמוטר (1986) לימדו את תכונה B באמצעות אנלוגיות, והילדים התקדמו באופן מובהק.</p>
+</div>
+<div class="notes"><p>(0:45) שלוש מסקנות להוראה. להדגיש את הזהירות של החוקרים, ואת המחקר ההמשכי שמראה שאפשר ללמד גם את התכונה הקשה ביותר.</p></div>
+</section>
+
+<!-- 18 BRIDGE -->
+<section class="slide" data-t="0:45">
+<div class="wrap">
+  <div class="eyebrow">מה זה אומר עלינו?</div>
+  <h2>הגשר לכיתה ה׳ (גיל 10–11)</h2>
+  <div class="grid2">
+    <div class="panel"><h3>"חלון ההצצה הטהור"</h3><p class="muted">כיתה ה׳ היא נקודת זמן מחקרית קריטית. הילדים נמצאים בשלב שבו ההבנה האינטואיטיבית שלהם מפותחת, רגע לפני שהם סופגים את ההוראה הפורמלית והטכנית של החישוב.</p></div>
+    <div class="panel"><h3>פוטנציאל השוואה</h3><p class="muted">המאמר מ-1988 מספק קו-בסיס (Baseline). אפשר לבדוק אם תלמידים כיום, בסביבה עתירת נתונים, עדיין מציגים את אותן תפיסות שגויות.</p></div>
+  </div>
+  <div class="grid3">
+    <div class="panel"><h3>1. להתמקד בהצדקות</h3><p class="muted small">לא להסתפק בתשובה נכונה או שגויה. לשאול "למה?" ולחפש שרידים "חברתיים" אצל בני 10.</p></div>
+    <div class="panel hl"><h3>2. לצפות לתכונות הקשות</h3><p class="muted small">ילדי כיתה ה׳ צפויים להבין את A, C, D. האתגר האמיתי: B, F, G.</p></div>
+    <div class="panel"><h3>3. דיסוננס השברים היום</h3><p class="muted small">האם החשיפה המודרנית לסטטיסטיקה (ספורט, רשתות) משנה את ההתנגדות ל"שליש כדורגל"?</p></div>
+  </div>
+</div>
+<div class="notes"><p>(0:45) החיבור לעבודה שלנו כמורים ביסודי. בני 10 במחקר (בערך כיתה ה׳) פתרו כ-93% מ-A, C, D, אבל רק 11%–25% מ-B, F, G.</p><p>שאלה לדיון אם יש זמן: איך הייתם מלמדים את תכונה B בכיתה ה׳?</p></div>
+</section>
+
+<!-- 19 QUIZ -->
+<section class="slide" data-act="quiz" data-t="2:30">
+<div class="wrap">
+  <div class="act-head">
+    <div style="display:flex;flex-direction:column;gap:10px;flex:1 1 380px;min-width:0">
+      <div class="eyebrow"><span class="tag act">פעילות 4 · בוחן סיכום: שבע התכונות</span><span class="livepill" data-live><i></i><span>מתחבר…</span></span></div>
+      <div class="taskchips" id="quiz-chips"></div>
+    </div>
+    <div class="qrbox"><button class="qr" data-qr aria-label="הגדלת קוד ה-QR"></button></div>
+  </div>
+  <div class="quizgrid">
+    <div class="panel" style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <p class="story" id="quiz-story"></p>
+      <div class="opts" id="quiz-opts"></div>
+      <div class="row" style="justify-content:space-between"><span class="small muted" id="quiz-n"></span><button class="btn pri" id="quiz-reveal">חשיפה</button></div>
+      <p class="why" id="quiz-why" hidden></p>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:10px">
+      <h3>טבלת מובילים</h3>
+      <div class="lb" id="quiz-lb"></div>
+      <p class="small muted">מתעדכנת לפי תשובות נכונות מהטלפון</p>
+    </div>
+  </div>
+</div>
+<div class="notes"><p>(2:30) שאלה אחת לכל תכונה, A עד G, בסגנון המשימות של המאמר. לכל שאלה: 15–20 שניות, ואז "חשיפה" עם ההסבר. אם הזמן קצר, אפשר לבחור 3–4 שאלות (מומלץ B, F, G).</p><p>שאלת B בנויה כך שהתשובה השגויה "אי אפשר לדעת" היא בדיוק הנימוק של הילדים במחקר. כדאי לעצור עליה.</p></div>
+</section>
+
+<!-- 20 BIBLIOGRAPHY -->
+<section class="slide" data-t="0:15">
+<div class="wrap">
+  <div class="eyebrow">ביבליוגרפיה · APA 7</div>
+  <h2>מקורות</h2>
+  <div class="panel bib">
+    <p>Mevarech, Z. R. (1983). A deep structure model of students' statistical misconceptions. <i>Educational Studies in Mathematics, 14</i>, 415–429.</p>
+    <p>Moroney, M. J. (1956). On the average and scatter. In J. R. Newman (Ed.), <i>The world of mathematics</i> (Vol. 3, pp. 1487–1511). Simon &amp; Schuster.</p>
+    <p>Pollatsek, A., Lima, S., &amp; Well, A. D. (1981). Concept or computation: Students' understanding of the mean. <i>Educational Studies in Mathematics, 12</i>, 191–204.</p>
+    <p>Strauss, S., &amp; Bichler, E. (1988). The development of children's concepts of the arithmetic average. <i>Journal for Research in Mathematics Education, 19</i>(1), 64–80.</p>
+    <p>Strauss, S., &amp; Perlmutter, A. (1986). <i>Teaching a property of the arithmetic average via analogies coded in different symbol systems: A case study in educational-developmental psychology</i> [Unpublished manuscript]. Tel Aviv University.</p>
+  </div>
+  <p style="font-family:var(--display);font-weight:900;font-size:clamp(2rem,4vw,3rem);color:var(--accent);text-align:center;margin-top:auto">תודה!</p>
+</div>
+<div class="notes"><p>(0:15) המאמר עצמו והמקורות שהוזכרו במצגת, לפי סדר אלפביתי ובפורמט APA 7.</p></div>
+</section>
+
+</div>
+<div id="notes" hidden><div class="in"><h4><span>הערות מציג</span><span id="notes-t"></span></h4><div class="body" id="notes-body"></div></div></div>
+<div id="bar">
+  <div id="prog"></div>
+  <button class="btn" id="prev" aria-label="הקודם">→</button>
+  <span id="count">1 / 20</span>
+  <button class="btn" id="next" aria-label="הבא">←</button>
+  <span class="sp"></span>
+  <span class="livepill hide-s" data-live><i></i><span>מתחבר…</span></span>
+  <button class="btn" id="qbtn" title="קוד QR גדול">QR <span class="kbd hide-s">Q</span></button>
+  <button class="btn hide-s" id="rbtn" title="מחיקת כל התשובות">איפוס</button>
+  <button class="btn" id="tbtn" title="איפוס טיימר"><span id="timer">00:00</span></button>
+  <button class="btn" id="nbtn">הערות <span class="kbd hide-s">N</span></button>
+  <button class="btn hide-s" id="fbtn" title="מסך מלא">⛶</button>
+</div>
+</div>
+
+<div id="qrbig" dir="rtl" hidden role="dialog" aria-label="קוד QR להצטרפות"><div class="box" id="qrbig-box"></div><p>סרקו כדי להשתתף · לחצו בכל מקום לסגירה</p></div>
+
+<div id="join" dir="rtl" hidden>
+  <div class="jhead"><h1>הממוצע <em>בעיני ילדים</em></h1><span class="livepill" data-live><i></i><span>מתחבר…</span></span></div>
+  <div class="nick"><label for="j-nick">כינוי (יופיע בטבלת המובילים)</label><input id="j-nick" maxlength="20" placeholder="למשל: מתמטיקאית צעירה"></div>
+  <div class="jtabs" role="tablist"><button data-tab="hw">ניסוי</button><button data-tab="task">כמו ילד</button><button data-tab="sort">מיון</button><button data-tab="quiz">בוחן</button></div>
+  <div class="jcard" data-pane="hw">
+    <b style="font-size:1.1rem">כמה שעות למדתם אתמול?</b>
+    <p class="note">לימודים ומטלות לסמינר. גם 0 זו תשובה.</p>
+    <div class="stepper"><button id="j-plus" aria-label="הוסף חצי שעה">+</button><output id="j-hw">–</output><button id="j-minus" aria-label="הפחת חצי שעה">−</button></div>
+    <span class="saved" id="j-hw-saved" hidden>נשלח ✓ אפשר לשנות בכל רגע</span>
+  </div>
+  <div class="jcard" data-pane="task" hidden>
+    <div class="taskchips" id="j-task-chips"></div>
+    <p class="story" id="j-task-story" style="font-size:1.12rem"></p>
+    <div class="jopts" id="j-task-opts"></div>
+    <p class="why" id="j-task-why" hidden></p>
+  </div>
+  <div class="jcard" data-pane="sort" hidden>
+    <b style="font-size:1.05rem">קל או קשה לילדים בגילים 8–14?</b>
+    <div id="j-sort"></div>
+  </div>
+  <div class="jcard" data-pane="quiz" hidden>
+    <div class="taskchips" id="j-quiz-chips"></div>
+    <p class="story" id="j-quiz-story" style="font-size:1.12rem"></p>
+    <div class="jopts" id="j-quiz-opts"></div>
+    <p class="why" id="j-quiz-why" hidden></p>
+  </div>
+  <p class="note" id="j-off" hidden>לא הצלחנו להתחבר. בדקו את החיבור לאינטרנט ורעננו את הדף.</p>
+</div>
+
+<script>
+(function(){
+"use strict";
+var MODE = location.hash === "#join" ? "join" : "deck";
+function $(s,r){return (r||document).querySelector(s)}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function fmt(n){return (Math.round(n*100)/100).toString()}
+
+/* ---------- data ---------- */
+var AGES=[8,10,12,14];
+var KIDS={A:[59,93,85,96],B:[11,11,12,31],C:[85,93,100,99],D:[80,93,99,100],E:[42.5,80,97.5,100],F:[27,21,39,61],G:[3,25,57,64]};
+var PROPS=[
+ {k:"A",n:"בין ערכי הקיצון",ex:"לא גדול מהערך הגדול ביותר",res:"easy"},
+ {k:"B",n:"סכום הסטיות הוא אפס",ex:"העודף שווה לחוסר",res:"hard"},
+ {k:"C",n:"מושפע מכל ערך",ex:"מוסיפים ערך, הממוצע משתנה",res:"easy"},
+ {k:"D",n:"לא חייב להיות אחד הערכים",ex:"הממוצע של 1 ו-3 הוא 2",res:"easy"},
+ {k:"E",n:"יכול להיות שבר",ex:"1.6 ילדים למשפחה",res:"mid"},
+ {k:"F",n:"גם אפס נספר",ex:"ימים בלי שיעורי בית",res:"hard"},
+ {k:"G",n:"מייצג את הקבוצה",ex:"הקרוב ביותר לכולם",res:"hard"}];
+var SETS={
+ task:{order:["A","E","B","G","F"],key:"ans",items:{
+  A:{t:"תפוחי האדמה",s:"הילדים בכיתה ערכו מסיבה בחוף, וכל אחד הביא תפוחי אדמה למדורה. יעל הביאה הכי הרבה: 3. כשהתפוחים היו מוכנים, הילדים חילקו את כולם כך שלכל אחד יהיה אותו מספר. כל ילד קיבל 4 תפוחי אדמה. האם זה יכול לקרות?",o:[["yes","כן, זה יכול לקרות"],["no","לא, זה לא יכול לקרות"]],c:"no",kids:[60,90,85,100],w:"הממוצע לא יכול להיות גדול מהערך הגדול ביותר (תכונה A)."},
+  E:{t:"30 ילדים, 10 כדורים",s:"כיתה של 30 ילדים קנתה 10 כדורי כדורגל. כמה כדורים צריך לקבל כל ילד?",o:[["third","שליש כדור"],["none","אי אפשר, אין תשובה"],["three","3 כדורים"]],c:"third",kids:[45,80,95,100],w:"ממוצע יכול להיות שבר שאין לו מקבילה במציאות (תכונה E)."},
+  B:{t:"העוגיות",s:"ילדים הביאו עוגיות למסיבה. חלק הביאו הרבה וחלק מעט. מי שהביאו הרבה נתנו למי שהביאו מעט, עד שלכולם היה אותו מספר עוגיות. האם מספר העוגיות שנתנו מי שהביאו הרבה שווה למספר שקיבלו מי שהביאו מעט?",o:[["same","שווה"],["more","נתנו יותר"],["less","נתנו פחות"],["unk","אי אפשר לדעת"]],c:"same",kids:[10,10,5,15],w:"סכום הסטיות מהממוצע הוא אפס: העודף שווה לחוסר (תכונה B)."},
+  G:{t:"הסוכריות",s:"למסיבת כיתה רות הביאה 5 סוכריות, יעל 10, נדב 20 ועמי 25. תגידו במספר אחד: כמה סוכריות הביא כל ילד?",o:[["5","5"],["10","10"],["15","15"],["25","25"]],c:"15",kids:[5,25,60,60],w:"הממוצע מייצג את כל הערכים (תכונה G). בני 8 בחרו לא פעם ב-25, מסיבות חברתיות."},
+  F:{t:"מאיה",s:"אחר כך הגיעה למסיבה מאיה, אבל היא לא הביאה סוכריות. תגידו במספר אחד: כמה סוכריות הביא כל ילד עכשיו?",o:[["15","15, מאיה לא משנה"],["12","12"],["20","20"]],c:"12",kids:[35,20,50,60],w:"גם אפס נכנס לחישוב: 60 ÷ 5 = 12 (תכונה F)."}}},
+ quiz:{order:["A","B","C","D","E","F","G"],key:"quiz",items:{
+  A:{t:"גובה ממוצע",s:"בקבוצה של 6 ילדים, הנמוך ביותר בגובה 128 ס״מ והגבוה ביותר 141 ס״מ. איזה מספר יכול להיות הגובה הממוצע של הקבוצה?",o:[["125","125 ס״מ"],["134","134 ס״מ"],["143","143 ס״מ"],["unk","אי אפשר לדעת שום דבר על הממוצע"]],c:"134",w:"הממוצע תמיד נמצא בין הערך הקטן ביותר לגדול ביותר (תכונה A), ולכן רק 134 אפשרי."},
+  B:{t:"מעל ומתחת",s:"בקבוצת ילדים, שלושה נמצאים מעל הממוצע: אחד ב-2 נקודות, אחד ב-3 ואחד ב-5. כל השאר מתחת לממוצע. כמה נקודות \"חסרות\" בסך הכול לילדים שמתחת לממוצע?",o:[["10","10"],["5","5"],["0","0"],["unk","אי אפשר לדעת בלי לדעת כמה ילדים יש"]],c:"10",w:"סכום הסטיות מהממוצע הוא אפס (תכונה B): העודף, 2 + 3 + 5 = 10, שווה בדיוק לחוסר. \"אי אפשר לדעת\" היא בדיוק התשובה השגויה של הילדים במחקר."},
+  C:{t:"תלמיד חדש",s:"ממוצע הציונים של 5 תלמידים הוא 80. הצטרף תלמיד חדש עם ציון 50. מה קורה לממוצע?",o:[["down","יורד"],["same","נשאר 80"],["up","עולה"],["dep","תלוי בציונים של האחרים"]],c:"down",w:"כל ערך משפיע על הממוצע (תכונה C): 400 + 50 = 450, ו-450 ÷ 6 = 75."},
+  D:{t:"חיות בבית",s:"ממוצע מספר חיות המחמד אצל 4 ילדים הוא 3. האם יש בהכרח ילד שמחזיק בדיוק 3 חיות?",o:[["yes","כן, בהכרח"],["notnec","לא בהכרח"],["never","לא, זה בלתי אפשרי"]],c:"notnec",w:"הממוצע לא חייב להיות שווה לאחד הערכים (תכונה D), למשל 1, 2, 4, 5. אבל זה גם אפשרי, למשל 3, 3, 3, 3."},
+  E:{t:"2.4 אחים",s:"בכיתה חישבו שממוצע מספר האחים לתלמיד הוא 2.4. מה נכון?",o:[["err","יש טעות בחישוב, אין 0.4 אח"],["ok","התוצאה תקינה, ממוצע יכול להיות שבר"],["round","צריך לעגל ל-2 כדי שהתשובה תהיה נכונה"]],c:"ok",w:"ממוצע יכול להיות שבר שאין לו מקבילה במציאות (תכונה E)."},
+  F:{t:"דקות קריאה",s:"נועה רשמה כמה דקות קראה בכל יום: ראשון 30, שני 0, שלישי 45, רביעי 0, חמישי 25. מה ממוצע הקריאה היומי שלה?",o:[["20","20 דקות"],["33","33.3 דקות"],["25","25 דקות"],["50","50 דקות"]],c:"20",w:"גם ימים של 0 נכנסים לחישוב (תכונה F): 100 ÷ 5 = 20. מי שמתעלם מהאפסים מקבל 33.3."},
+  G:{t:"בלונים",s:"ארבעה ילדים הביאו בלונים למסיבה: 2, 4, 6 ו-8. איזה מספר אחד מתאר הכי טוב כמה בלונים הביא כל ילד?",o:[["8","8, כי זה הכי הרבה"],["5","5"],["2","2"],["20","20"]],c:"5",w:"הממוצע מייצג את הקבוצה: הערך הקרוב ביותר לכל הערכים (תכונה G). בחירה ב-8 היא הטעות ה\"חברתית\" של הילדים הצעירים."}}}
+};
+var SAMPLE_HW=[0,1,2,2,3,0,4,1.5,2.5,0,3,5,2,1];
+
+/* ---------- live connection (public MQTT broker) ---------- */
+function rid(n){return Math.random().toString(36).slice(2,2+n)}
+var params=new URLSearchParams(location.search);
+var ROOM=MODE==="join"?(params.get("r")||""):(ls("avg-room")||(function(){var c=rid(6);ls("avg-room",c);return c})());
+ROOM=String(ROOM).replace(/[^a-z0-9]/gi,"").slice(0,12);
+var JOIN_URL=location.origin+location.pathname+"?r="+ROOM+"#join";
+var PFX="avgkids-sb88/"+ROOM+"/";
+var myId=ls("avg-id")||(function(){var c=rid(8);ls("avg-id",c);return c})();
+var client=null,connected=false,peersMap={};
+var phase={view:null,cur:{task:"A",quiz:"A"},rev:{task:{},quiz:{}},sortRev:false};
+var me={nick:ls("avg-nick")||"",hw:null,ans:{},quiz:{},sort:{}};
+try{var saved=JSON.parse(ls("avg-me")||"null");if(saved){me.hw=saved.hw;me.ans=saved.ans||{};me.quiz=saved.quiz||{};me.sort=saved.sort||{}}}catch(e){}
+var saveT=null;
+function saveMe(){
+  ls("avg-me",JSON.stringify({hw:me.hw,ans:me.ans,quiz:me.quiz,sort:me.sort}));
+  if(MODE!=="join"||!client||!connected)return;
+  clearTimeout(saveT);
+  saveT=setTimeout(function(){client.publish(PFX+"p/"+myId,JSON.stringify({nick:me.nick.slice(0,20),hw:me.hw,ans:me.ans,quiz:me.quiz,sort:me.sort,role:"p"}),{qos:1,retain:true})},250);
+}
+function setLive(state,n){
+  $$("[data-live]").forEach(function(p){
+    p.classList.toggle("on",state==="on");
+    var s=p.querySelector("span");
+    if(state==="on")s.textContent=MODE==="join"?"מחובר לכיתה":(n+" משתתפים");
+    else if(state==="off")s.textContent=MODE==="join"?"לא מחובר":"מצב ידני (ללא טלפונים)";
+    else s.textContent="מתחבר…";
+  });
+}
+function participants(){return Object.keys(peersMap).map(function(k){return peersMap[k]}).filter(function(p){return p&&p.role==="p"})}
+function emitPhase(){if(MODE==="deck"&&client&&connected)client.publish(PFX+"phase",JSON.stringify(phase),{qos:1,retain:true})}
+function cleanPhase(d){
+  var p={view:["hw","task","sort","quiz"].indexOf(d.view)>-1?d.view:null,cur:{task:"A",quiz:"A"},rev:{task:{},quiz:{}},sortRev:!!d.sortRev};
+  ["task","quiz"].forEach(function(s){
+    if(d.cur&&SETS[s].items[d.cur[s]])p.cur[s]=d.cur[s];
+    if(d.rev&&d.rev[s]&&typeof d.rev[s]==="object")SETS[s].order.forEach(function(k){p.rev[s][k]=!!d.rev[s][k]});
+  });
+  return p;
+}
+function onPhase(d){
+  var prev=phase;phase=cleanPhase(d);
+  if(phase.view&&(phase.view!==prev.view||phase.cur.task!==prev.cur.task||phase.cur.quiz!==prev.cur.quiz)){
+    jTab=phase.view;if(phase.view==="task"||phase.view==="quiz")jCur[phase.view]=phase.cur[phase.view];
+  }
+  renderJoin();
+}
+function goOffline(msg){setLive("off");if(MODE==="join"){var o=$("#j-off");o.textContent=msg;o.hidden=false}}
+function connectLive(){
+  if(!ROOM){goOffline("חסר קוד כיתה. סרקו שוב את הקוד שעל המסך.");return}
+  if(!window.mqtt){goOffline("לא הצלחנו להתחבר. בדקו את החיבור לאינטרנט ורעננו את הדף.");return}
+  var brokers=window.AVG_BROKERS||["wss://broker.hivemq.com:8884/mqtt","wss://broker.emqx.io:8084/mqtt"],bi=0;
+  function start(){
+    var ever=false,c;
+    try{c=mqtt.connect(brokers[bi],{clientId:"avg_"+myId+"_"+rid(4),clean:true,reconnectPeriod:3000,connectTimeout:8000})}catch(e){next();return}
+    client=c;
+    c.on("connect",function(){
+      ever=true;connected=true;$("#j-off").hidden=true;setLive("on",participants().length);
+      if(MODE==="deck"){c.subscribe(PFX+"p/+",{qos:1});emitPhase()}
+      else{c.subscribe(PFX+"phase",{qos:1});saveMe()}
+    });
+    c.on("close",function(){if(connected){connected=false;setLive("wait")}});
+    c.on("error",function(){});
+    c.on("message",function(topic,buf){
+      var txt=buf?buf.toString():"";
+      if(topic===PFX+"phase"){if(MODE!=="join"||!txt)return;try{var d=JSON.parse(txt);if(d&&typeof d==="object")onPhase(d)}catch(e){}return}
+      if(topic.indexOf(PFX+"p/")===0){
+        var id=topic.slice((PFX+"p/").length);
+        if(!txt){delete peersMap[id]}else{try{var v=JSON.parse(txt);if(v&&typeof v==="object")peersMap[id]=v}catch(e){}}
+        setLive("on",participants().length);renderAct();
+      }
+    });
+    setTimeout(function(){if(!ever){try{c.end(true)}catch(e){}next()}},9000);
+  }
+  function next(){bi++;if(bi<brokers.length)start();else goOffline("לא הצלחנו להתחבר. בדקו את החיבור לאינטרנט ורעננו את הדף.")}
+  start();
+}
+function resetAnswers(){
+  if(!window.confirm("למחוק את כל התשובות של המשתתפים?"))return;
+  Object.keys(peersMap).forEach(function(id){if(client&&connected)client.publish(PFX+"p/"+id,"",{qos:1,retain:true})});
+  peersMap={};
+  ["task","quiz"].forEach(function(s){SETS[s].order.forEach(function(k){manual[s][k]={}})});
+  PROPS.forEach(function(p){manual.sort[p.k]={e:0,h:0}});manual.hw=[];
+  phase.rev={task:{},quiz:{}};phase.sortRev=false;emitPhase();
+  setLive(connected?"on":"off",0);renderAct();
+}
+
+/* ---------- balance beam svg ---------- */
+function beamSVG(vals,opt){
+  opt=opt||{};
+  var W=640,H=172,pad=30,y=86;
+  var max=opt.max!=null?Math.max(opt.max,Math.max.apply(null,vals)):Math.ceil(Math.max.apply(null,vals)*1.1)||1;
+  var min=opt.min!=null?opt.min:0;
+  function X(v){return pad+(v-min)/(max-min)*(W-2*pad)}
+  var used=vals.filter(function(v){return !(opt.exclude&&opt.exclude(v))});
+  var mean=used.length?used.reduce(function(a,b){return a+b},0)/used.length:null;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="ציר מספרים עם נקודות ונקודת איזון בממוצע">';
+  s+='<line x1="'+pad+'" x2="'+(W-pad)+'" y1="'+y+'" y2="'+y+'" stroke="var(--muted)" stroke-width="2"/>';
+  var step=opt.tick||(max<=12?1:5);
+  for(var t=min;t<=max+1e-9;t+=step){s+='<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+(y-4)+'" y2="'+(y+4)+'" stroke="var(--line)"/>';s+='<text x="'+X(t)+'" y="'+(y+40)+'" text-anchor="middle">'+fmt(t)+'</text>'}
+  var stack={};
+  vals.forEach(function(v){var k=String(Math.round(v*2)/2);stack[k]=(stack[k]||0)+1;var cy=y-9-(stack[k]-1)*14;var ex=opt.exclude&&opt.exclude(v);
+    s+='<circle cx="'+X(v)+'" cy="'+Math.max(cy,8)+'" r="6" fill="'+(ex?'none':(opt.hl&&opt.hl(v)?'var(--accent)':'var(--sky)'))+'" stroke="'+(ex?'var(--faint)':'none')+'" stroke-dasharray="2 2"/>'});
+  if(opt.ghost!=null){s+='<path d="M'+X(opt.ghost)+' '+(y+3)+' l-11 20 h22 z" fill="none" stroke="var(--faint)" stroke-dasharray="3 3"/>'}
+  if(mean!=null){s+='<path d="M'+X(mean)+' '+(y+3)+' l-11 20 h22 z" fill="var(--accent)"/>';s+='<text x="'+X(mean)+'" y="'+(y+64)+'" text-anchor="middle" style="fill:var(--accent);font-weight:600;font-size:15px">'+(opt.label||"")+fmt(mean)+'</text>'}
+  return s+'</svg>';
+}
+$$("[data-beam]").forEach(function(b){
+  var v=b.getAttribute("data-beam").split(",").map(Number);
+  var o=v.length===3?{min:0,max:10,tick:1}:{min:0,max:30,tick:5};
+  b.innerHTML=beamSVG(v,o)+(b.getAttribute("data-cap")?'<p class="small muted" style="text-align:center;margin-top:4px">'+esc(b.getAttribute("data-cap"))+'</p>':"");
+});
+
+/* ---------- static builds ---------- */
+(function(){
+  var rows=$("#sample-rows"),cols=["var(--a8)","var(--a10)","var(--a12)","var(--a14)"];
+  AGES.forEach(function(a,i){
+    var d='';for(var j=0;j<20;j++)d+='<i style="background:'+(a===12?'var(--accent)':cols[i])+';opacity:'+(j<10?1:.7)+'"></i>';
+    rows.insertAdjacentHTML("beforeend",'<div class="agerow'+(a===12?' k':'')+'"><b class="num">גיל '+a+'</b><div class="dots">'+d+'</div><span class="small muted">'+(a===12?'לומדים לחשב':(a<12?'אינטואיציה':'אחרי הלמידה'))+'</span></div>');
+  });
+  var h='<tr><th></th>'+AGES.map(function(a){return '<th>גיל '+a+'</th>'}).join("")+'</tr>';
+  PROPS.forEach(function(p){
+    h+='<tr><th class="rowh"><span class="num" style="color:'+(p.res==="hard"?'var(--accent)':p.res==="easy"?'var(--sky)':'var(--muted)')+'">'+p.k+'</span> '+p.n+'</th>';
+    KIDS[p.k].forEach(function(v){var pc=Math.round(v);h+='<td style="background:color-mix(in srgb,var(--sky) '+Math.max(6,pc)+'%,var(--bg2));color:'+(pc>55?'var(--bg)':'var(--fg)')+'">'+pc+'</td>'});
+    h+='</tr>';
+  });
+  $("#heat").innerHTML=h;
+  var g='',groups=[[40,[50,58,46,54,62]],[160,[78,86,74,82,90]],[280,[22,30,26,18,34]]];
+  groups.forEach(function(G,i){var m=G[1].reduce(function(a,b){return a+b},0)/5;
+    G[1].forEach(function(v,j){g+='<circle cx="'+(G[0]+j*9)+'" cy="'+(110-v)+'" r="4" fill="var(--sky)"/>'});
+    g+='<line x1="'+(G[0]-8)+'" x2="'+(G[0]+46)+'" y1="'+(110-m)+'" y2="'+(110-m)+'" stroke="var(--accent)" stroke-width="2.5"/>';
+    g+='<text x="'+(G[0]+18)+'" y="118" text-anchor="middle">קבוצה '+(i+1)+'</text>'});
+  g+='<text x="230" y="20" text-anchor="middle" style="fill:var(--accent)">קווים כתומים: ממוצעי הקבוצות</text>';
+  $("#anova-svg").innerHTML=g;
+})();
+
+/* ---------- QR ---------- */
+function drawQR(target,size){
+  if(!window.QRCode){target.textContent="QR";return}
+  target.innerHTML="";
+  try{new QRCode(target,{text:JOIN_URL,width:size,height:size,colorDark:"#10151e",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M})}catch(e){target.textContent="QR"}
+}
+var bigDrawn=false;
+function openQR(){if(!bigDrawn){drawQR($("#qrbig-box"),720);bigDrawn=true}$("#qrbig").hidden=false}
+function closeQR(){$("#qrbig").hidden=true}
+$("#qrbig").addEventListener("click",closeQR);
+
+/* ---------- DECK ---------- */
+var slides=$$(".slide"),cur=0,hwZero=false,hwOut=false;
+var manual={hw:[],task:{},quiz:{},sort:{}};
+["task","quiz"].forEach(function(s){SETS[s].order.forEach(function(k){manual[s][k]={}})});
+PROPS.forEach(function(p){manual.sort[p.k]={e:0,h:0}});
+function go(i){
+  i=Math.max(0,Math.min(slides.length-1,i));
+  slides[cur].classList.remove("on");cur=i;slides[cur].classList.add("on");slides[cur].scrollTop=0;
+  $("#count").textContent=(cur+1)+" / "+slides.length;
+  $("#prog").style.width=((cur+1)/slides.length*100)+"%";
+  var n=slides[cur].querySelector(".notes");$("#notes-body").innerHTML=n?n.innerHTML:"";
+  $("#notes-t").textContent="זמן מוצע "+(slides[cur].getAttribute("data-t")||"");
+  ls("avg-slide",String(cur));
+  var a=slides[cur].getAttribute("data-act");
+  if(a&&a!==phase.view){phase.view=a;emitPhase()}
+  renderAct();
+  if(!tStart&&cur>0)startTimer();
+}
+var tStart=0,tInt=null;
+function startTimer(){tStart=Date.now();clearInterval(tInt);tInt=setInterval(function(){var s=Math.floor((Date.now()-tStart)/1000);$("#timer").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");$("#timer").style.color=s>20*60?"var(--bad)":s>15*60?"var(--accent)":""},1000)}
+
+function renderAct(){
+  if(MODE!=="deck")return;
+  var a=slides[cur]&&slides[cur].getAttribute("data-act");
+  if(a==="hw")renderHW();else if(a==="task"||a==="quiz")renderSet(a);else if(a==="sort")renderSort();
+}
+function renderHW(){
+  var live=participants().map(function(p){return typeof p.hw==="number"&&isFinite(p.hw)?Math.max(0,Math.min(24,p.hw)):null}).filter(function(v){return v!==null});
+  var vals=live.concat(manual.hw),sample=false;
+  if(!vals.length){vals=SAMPLE_HW.slice();sample=true}
+  if(hwOut)vals=vals.concat([12]);
+  $("#hw-sample").hidden=!sample;
+  var all=vals.reduce(function(a,b){return a+b},0)/vals.length;
+  var nz=vals.filter(function(v){return v>0}),nzMean=nz.length?nz.reduce(function(a,b){return a+b},0)/nz.length:0;
+  var opt={min:0,max:Math.max(12,Math.ceil(Math.max.apply(null,vals))),tick:1,label:"ממוצע ",hl:hwOut?function(v){return v===12}:null};
+  if(hwZero){opt.exclude=function(v){return v===0};opt.ghost=all}
+  $("#hw-beam").innerHTML=beamSVG(vals,opt);
+  var zeros=vals.length-nz.length;
+  $("#hw-stats").innerHTML='<div class="stat"><small>משתתפים</small><b>'+vals.length+'</b></div>'+
+   '<div class="stat '+(hwZero?'':'hl')+'"><small>ממוצע (כולל אפסים)</small><b>'+fmt(all)+'</b></div>'+
+   (hwZero?'<div class="stat hl"><small>ממוצע בלי '+zeros+' אפסים</small><b>'+fmt(nzMean)+'</b></div>':'<div class="stat"><small>ענו 0</small><b>'+zeros+'</b></div>')+
+   '<div class="stat"><small>הכי מעט</small><b>'+fmt(Math.min.apply(null,vals))+'</b></div>'+
+   '<div class="stat"><small>הכי הרבה</small><b>'+fmt(Math.max.apply(null,vals))+'</b></div>';
+  $("#hw-zero").classList.toggle("on",hwZero);$("#hw-out").classList.toggle("on",hwOut);
+}
+$("#hw-zero").onclick=function(){hwZero=!hwZero;renderHW()};
+$("#hw-out").onclick=function(){hwOut=!hwOut;renderHW()};
+$("#hw-manual").addEventListener("input",function(e){var t=e.target.value.trim();manual.hw=t?t.split(/[,\s،]+/).map(Number).filter(function(v){return isFinite(v)&&v>=0&&v<=24}):[];renderHW()});
+$("#hw-clear").onclick=function(){$("#hw-manual").value="";manual.hw=[];renderHW()};
+
+function setCounts(s,k){
+  var T=SETS[s].items[k],c={};T.o.forEach(function(o){c[o[0]]=(manual[s][k][o[0]]||0)});
+  participants().forEach(function(p){var a=p[SETS[s].key]&&p[SETS[s].key][k];if(a!=null&&c.hasOwnProperty(a))c[a]++});
+  return c;
+}
+function chipsHTML(s,curK,done){
+  return SETS[s].order.map(function(k){return '<button data-k="'+k+'" class="'+(curK===k?'cur':'')+'"><span class="l">'+k+'</span><bdi>'+SETS[s].items[k].t+'</bdi>'+(done&&done[k]?' ✓':'')+'</button>'}).join("");
+}
+function renderSet(s){
+  var k=phase.cur[s],T=SETS[s].items[k],c=setCounts(s,k),tot=0,rev=!!phase.rev[s][k];
+  for(var x in c)tot+=c[x];
+  $("#"+s+"-chips").innerHTML=chipsHTML(s,k);
+  $("#"+s+"-story").textContent=T.s;
+  $("#"+s+"-opts").innerHTML=T.o.map(function(o){var n=c[o[0]],pc=tot?Math.round(n/tot*100):0,ok=rev&&o[0]===T.c;
+    return '<div class="opt'+(ok?' correct':'')+'"><span>'+esc(o[1])+(ok?' ✓':'')+'</span><div class="bar"><i style="width:'+pc+'%"></i></div><span class="cnt">'+n+' · '+pc+'%</span><span class="tally"><button data-o="'+o[0]+'" data-d="1" aria-label="הוסף">+</button><button data-o="'+o[0]+'" data-d="-1" aria-label="הפחת">−</button></span></div>'}).join("");
+  $("#"+s+"-n").textContent=tot?(tot+" תשובות"+(rev?" · "+Math.round(c[T.c]/tot*100)+"% צדקו":"")):"מחכים לתשובות… (אפשר לספור הצבעות ידיים עם + ו-−)";
+  $("#"+s+"-reveal").textContent=rev?"הסתר חשיפה":(s==="task"?"חשיפה: מה ענו הילדים?":"חשיפה: מה התשובה?");
+  if(s==="task"){
+    $("#task-rev").hidden=!rev;
+    if(rev){
+      var you=tot?Math.round(c[T.c]/tot*100):null,cols=["var(--a8)","var(--a10)","var(--a12)","var(--a14)"];
+      var h=AGES.map(function(a,i){return '<div class="ab"><span>בני '+a+'</span><div class="t"><i style="width:'+T.kids[i]+'%;background:'+cols[i]+'"></i></div><span class="v">'+T.kids[i]+'%</span></div>'}).join("");
+      if(you!=null)h+='<div class="ab you"><span>אתם</span><div class="t"><i style="width:'+you+'%"></i></div><span class="v">'+you+'%</span></div>';
+      $("#task-ages").innerHTML=h;$("#task-why").textContent=T.w;
+    }
+  }else{
+    $("#quiz-why").hidden=!rev;$("#quiz-why").textContent=T.w;
+    renderLB();
+  }
+}
+function renderLB(){
+  var Q=SETS.quiz,rows=[];
+  participants().forEach(function(p){
+    var a=p.quiz||{},sc=0,ans=0;
+    Q.order.forEach(function(k){if(a[k]!=null){ans++;if(a[k]===Q.items[k].c)sc++}});
+    if(ans)rows.push({n:String(p.nick||"").trim().slice(0,20)||"אנונימי",s:sc,a:ans});
+  });
+  rows.sort(function(x,y){return y.s-x.s||x.a-y.a});
+  $("#quiz-lb").innerHTML=rows.length?rows.slice(0,6).map(function(r,i){return '<div class="r"><span>'+(i+1)+'</span><span class="nm">'+esc(r.n)+'</span><b>'+r.s+'/7</b></div>'}).join(""):'<p class="small muted">עוד אין תשובות מהטלפונים.</p>';
+}
+["task","quiz"].forEach(function(s){
+  $("#"+s+"-chips").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;phase.cur[s]=b.getAttribute("data-k");emitPhase();renderSet(s)});
+  $("#"+s+"-opts").addEventListener("click",function(e){var b=e.target.closest("button[data-o]");if(!b)return;var o=b.getAttribute("data-o"),m=manual[s][phase.cur[s]];m[o]=Math.max(0,(m[o]||0)+Number(b.getAttribute("data-d")));renderSet(s)});
+  $("#"+s+"-reveal").onclick=function(){var k=phase.cur[s];phase.rev[s][k]=!phase.rev[s][k];emitPhase();renderSet(s)};
+});
+
+function renderSort(){
+  var votes={},voters=0;PROPS.forEach(function(p){votes[p.k]={e:manual.sort[p.k].e,h:manual.sort[p.k].h}});
+  participants().forEach(function(p){if(p.sort&&typeof p.sort==="object"){var any=false;PROPS.forEach(function(q){var v=p.sort[q.k];if(v==="e"){votes[q.k].e++;any=true}else if(v==="h"){votes[q.k].h++;any=true}});if(any)voters++}});
+  $("#sort-n").textContent=voters?voters+" ממיינים בטלפון":"";
+  var resTxt={easy:"קל לפי המחקר",hard:"קשה לפי המחקר",mid:"קשה רק לבני 8"};
+  $("#sortboard").innerHTML=PROPS.map(function(p){var v=votes[p.k],t=v.e+v.h,pe=t?v.e/t*100:0,ph=t?v.h/t*100:0;
+    return '<div class="srow"><span class="letter">'+p.k+'</span><div class="lbl"><b>'+p.n+'</b>'+(phase.sortRev?'<small>בני 8: '+Math.round(KIDS[p.k][0])+'% · בני 14: '+KIDS[p.k][3]+'%</small>':'<small>'+esc(p.ex)+'</small>')+'</div>'+
+    '<div class="split2" title="קל '+v.e+' · קשה '+v.h+'"><span class="e" style="width:'+pe+'%"></span><span class="h" style="width:'+ph+'%"></span></div>'+
+    (phase.sortRev?'<span class="res '+p.res+'">'+resTxt[p.res]+'</span>':'<span class="tal"><button class="btn sm" data-s="'+p.k+'" data-v="e">+קל</button><button class="btn sm" data-s="'+p.k+'" data-v="h">+קשה</button></span>')+'</div>'}).join("");
+  $("#sort-reveal").textContent=phase.sortRev?"הסתר חשיפה":"חשיפה: מה מצא המחקר?";
+}
+$("#sortboard").addEventListener("click",function(e){var b=e.target.closest("button[data-s]");if(!b)return;manual.sort[b.getAttribute("data-s")][b.getAttribute("data-v")]++;renderSort()});
+$("#sort-reveal").onclick=function(){phase.sortRev=!phase.sortRev;emitPhase();renderSort()};
+
+function toggleNotes(){var n=$("#notes");n.hidden=!n.hidden;$("#nbtn").classList.toggle("on",!n.hidden)}
+function editing(t){return t&&(t.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(t.tagName))}
+
+if(MODE==="deck"){
+  var start=Number(ls("avg-slide"))||0;slides[0].classList.add("on");go(start<slides.length?start:0);
+  $("#next").onclick=function(){go(cur+1)};$("#prev").onclick=function(){go(cur-1)};
+  $("#nbtn").onclick=toggleNotes;
+  $("#qbtn").onclick=openQR;
+  $("#rbtn").onclick=resetAnswers;
+  $$("[data-qr]").forEach(function(q){drawQR(q,120);q.addEventListener("click",openQR)});
+  $("#tbtn").onclick=function(){startTimer();$("#timer").textContent="00:00"};
+  $("#fbtn").onclick=function(){try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(function(){})}catch(e){}};
+  document.addEventListener("keydown",function(e){
+    if(editing(e.target))return;
+    if(!$("#qrbig").hidden){if(["Escape","q","Q","/"].indexOf(e.key)>-1){e.preventDefault();closeQR()}return}
+    if(["ArrowLeft","ArrowDown","PageDown"," "].indexOf(e.key)>-1){e.preventDefault();go(cur+1)}
+    else if(["ArrowRight","ArrowUp","PageUp"].indexOf(e.key)>-1){e.preventDefault();go(cur-1)}
+    else if(e.key==="n"||e.key==="N"||e.key==="מ"){toggleNotes()}
+    else if(e.key==="q"||e.key==="Q"||e.key==="/"){openQR()}
+    else if(e.key==="Home")go(0);else if(e.key==="End")go(slides.length-1);
+  });
+  var tx=null;$("#stage").addEventListener("touchstart",function(e){tx=e.touches[0].clientX},{passive:true});
+  $("#stage").addEventListener("touchend",function(e){if(tx==null)return;var dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>60&&!editing(e.target))go(cur+(dx>0?1:-1));tx=null},{passive:true});
+  ["f-course","f-lect","f-pres","f-date"].forEach(function(id){var f=document.getElementById(id);var v=ls("avg-"+id);if(v)f.textContent=v;f.addEventListener("input",function(){ls("avg-"+id,f.textContent)})});
+}
+
+/* ---------- JOIN ---------- */
+var jTab="hw",jCur={task:"A",quiz:"A"};
+function renderJoin(){
+  $$(".jtabs button").forEach(function(b){var t=b.getAttribute("data-tab");b.classList.toggle("cur",t===jTab);b.classList.toggle("live",t===phase.view)});
+  $$("[data-pane]").forEach(function(p){p.hidden=p.getAttribute("data-pane")!==jTab});
+  $("#j-hw").textContent=me.hw==null?"–":fmt(me.hw);
+  $("#j-hw-saved").hidden=me.hw==null;
+  ["task","quiz"].forEach(function(s){
+    var k=jCur[s],T=SETS[s].items[k],mine=me[SETS[s].key],rev=!!phase.rev[s][k];
+    $("#j-"+s+"-chips").innerHTML=chipsHTML(s,k,mine);
+    $("#j-"+s+"-story").textContent=T.s;
+    $("#j-"+s+"-opts").innerHTML=T.o.map(function(o){return '<button data-o="'+o[0]+'" class="'+(mine[k]===o[0]?'sel ':'')+(rev&&o[0]===T.c?'ok':'')+'">'+esc(o[1])+'</button>'}).join("");
+    $("#j-"+s+"-why").hidden=!rev;$("#j-"+s+"-why").textContent=T.w;
+  });
+  $("#j-sort").innerHTML=PROPS.map(function(p){var v=me.sort[p.k];return '<div class="jsrow"><span class="letter">'+p.k+'</span><div><b>'+p.n+'</b><span>'+esc(p.ex)+'</span></div><div class="seg"><button data-s="'+p.k+'" data-v="e" class="e '+(v==="e"?'sel':'')+'">קל</button><button data-s="'+p.k+'" data-v="h" class="h '+(v==="h"?'sel':'')+'">קשה</button></div></div>'}).join("");
+}
+if(MODE==="join"){
+  $("#deck").hidden=true;$("#join").hidden=false;
+  $("#j-nick").value=me.nick;
+  $("#j-nick").addEventListener("input",function(e){me.nick=e.target.value;ls("avg-nick",me.nick);saveMe()});
+  $$(".jtabs button").forEach(function(b){b.onclick=function(){jTab=b.getAttribute("data-tab");renderJoin()}});
+  $("#j-plus").onclick=function(){me.hw=Math.min(24,(me.hw==null?0:me.hw)+0.5);saveMe();renderJoin()};
+  $("#j-minus").onclick=function(){me.hw=Math.max(0,(me.hw==null?0.5:me.hw)-0.5);saveMe();renderJoin()};
+  ["task","quiz"].forEach(function(s){
+    $("#j-"+s+"-chips").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;jCur[s]=b.getAttribute("data-k");renderJoin()});
+    $("#j-"+s+"-opts").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;me[SETS[s].key][jCur[s]]=b.getAttribute("data-o");saveMe();renderJoin()});
+  });
+  $("#j-sort").addEventListener("click",function(e){var b=e.target.closest("button[data-s]");if(!b)return;me.sort[b.getAttribute("data-s")]=b.getAttribute("data-v");saveMe();renderJoin()});
+  renderJoin();
+}
+connectLive();
+})();
+</script>
+
+</body>
+</html>
