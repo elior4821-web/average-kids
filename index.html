@@ -2657,6 +2657,14 @@ table.mis td b{color:var(--accent);font-family:var(--mono)}
   .manual{display:none}
   h2{font-size:clamp(1.4rem,2.6vw,2rem)}
 }
+table.dtab{border-collapse:collapse;width:100%;min-width:380px;font-size:.95rem}
+table.dtab th,table.dtab td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:center}
+table.dtab th{color:var(--muted);font-weight:600;font-size:.82rem}
+table.dtab th.rh,table.dtab td.rh{text-align:right;white-space:nowrap}
+table.dtab td{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+table.dtab td.rh{font-family:var(--body);direction:rtl}
+table.dtab tr.sig td{color:var(--accent);font-weight:600}
+table.dtab td.hi{color:var(--accent);font-weight:600}
 </style>
 
 </head>
@@ -2903,15 +2911,20 @@ table.mis td b{color:var(--accent);font-family:var(--mono)}
   <div class="eyebrow">באמצעות מה הוצגו הממצאים?</div>
   <h2>טבלאות, ניתוח שונות ושכיחויות</h2>
   <div class="split">
-    <div class="panel"><ul class="clean">
-      <li><b>טבלה 1:</b> ממוצעים וסטיות תקן של הציונים לכל תכונה ולכל גיל.</li>
-      <li><b>טבלה 2:</b> ניתוח שונות <span class="ltr">4 × 6 × 2 × 2</span> במדידות חוזרות, ומבחן המשך שפה (Scheffé) ברמת מובהקות <span class="num ltr">α = .01</span>.</li>
-      <li><b>טבלה 3:</b> אחוז הילדים שענו נכון, לפי גיל, תכונה, אמצעי הצגה וסוג כמות.</li>
-      <li><b>טבלאות 4–10:</b> שכיחות סוגי הנימוקים לשיפוטים נכונים ושגויים, לכל תכונה.</li>
-    </ul></div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <div class="taskchips" id="tbl-tabs">
+        <button data-t="1" class="cur"><span class="l">1</span>ממוצעים</button>
+        <button data-t="2"><span class="l">2</span>ANOVA</button>
+        <button data-t="3"><span class="l">3</span>אחוז הצלחה</button>
+        <button data-t="4"><span class="l">4</span>נימוקים</button>
+      </div>
+      <p class="small muted" id="tbl-cap"></p>
+      <div class="tablewrap"><table class="dtab" id="tbl-body"></table></div>
+      <p class="small muted" id="tbl-note"></p>
+    </div>
     <div class="panel anova" style="display:flex;flex-direction:column;gap:10px">
       <h3>ANOVA בדקה אחת</h3>
-      <svg viewBox="0 0 360 120" role="img" aria-label="שלוש קבוצות עם ממוצעים שונים ופיזור קטן בתוכן"><g id="anova-svg"></g></svg>
+      <svg viewBox="0 0 360 145" role="img" aria-label="שלוש קבוצות עם ממוצעים שונים ופיזור קטן בתוכן"><g id="anova-svg"></g></svg>
       <p class="small">השאלה: האם ההבדלים <b>בין</b> ממוצעי הקבוצות גדולים מהפיזור <b>בתוך</b> כל קבוצה? <span class="ltr num">F = בין ÷ בתוך</span>. F גדול פירושו הבדל מובהק.</p>
       <p class="small muted"><span class="ltr">4×6×2×2</span> = 4 גילים × 6 תכונות (E הוצאה) × 2 אמצעים (המספרי הוצא) × 2 סוגי כמות. "מדידות חוזרות": כל ילד פתר את כל סוגי המשימות.</p>
     </div>
@@ -3284,13 +3297,45 @@ $$("[data-beam]").forEach(function(b){
   $("#heat").innerHTML=h;
   var g='',groups=[[40,[50,58,46,54,62]],[160,[78,86,74,82,90]],[280,[22,30,26,18,34]]];
   groups.forEach(function(G,i){var m=G[1].reduce(function(a,b){return a+b},0)/5;
-    G[1].forEach(function(v,j){g+='<circle cx="'+(G[0]+j*9)+'" cy="'+(110-v)+'" r="4" fill="var(--sky)"/>'});
-    g+='<line x1="'+(G[0]-8)+'" x2="'+(G[0]+46)+'" y1="'+(110-m)+'" y2="'+(110-m)+'" stroke="var(--accent)" stroke-width="2.5"/>';
-    g+='<text x="'+(G[0]+18)+'" y="118" text-anchor="middle">קבוצה '+(i+1)+'</text>'});
-  g+='<text x="230" y="20" text-anchor="middle" style="fill:var(--accent)">קווים כתומים: ממוצעי הקבוצות</text>';
+    G[1].forEach(function(v,j){g+='<circle cx="'+(G[0]+j*9)+'" cy="'+(130-v)+'" r="4" fill="var(--sky)"/>'});
+    g+='<line x1="'+(G[0]-8)+'" x2="'+(G[0]+46)+'" y1="'+(130-m)+'" y2="'+(130-m)+'" stroke="var(--accent)" stroke-width="2.5"/>';
+    g+='<text x="'+(G[0]+18)+'" y="142" text-anchor="middle">קבוצה '+(i+1)+'</text>'});
+  g+='<text x="180" y="12" text-anchor="middle" style="fill:var(--accent)">קווים כתומים: ממוצעי הקבוצות</text>';
   $("#anova-svg").innerHTML=g;
 })();
 
+
+/* ---------- article tables (slide 12) ---------- */
+(function(){
+  var T={
+   1:{cap:"טבלה 1: ממוצע הציונים לכל תכונה בכל גיל (נכון = 2, שגוי = 1)",
+      head:["תכונה","8","10","12","14","סה״כ"],
+      rows:[["A בין ערכי הקיצון",1.63,1.92,1.86,1.96,1.84],["B סכום הסטיות אפס",1.08,1.11,1.13,1.31,1.16],["C מושפע מכל ערך",1.84,1.96,2.00,2.00,1.95],["D לא חייב להיות אחד הערכים",1.76,1.93,2.00,2.00,1.92],["E יכול להיות שבר",1.42,1.80,1.96,2.00,1.80],["F גם אפס נספר",1.26,1.21,1.46,1.61,1.38],["G מייצג את הקבוצה",1.04,1.26,1.57,1.63,1.39],["ממוצע",1.41,1.57,1.67,1.75,""]],
+      note:"n = 20 בכל תא. ציון 2.00 = כל הילדים צדקו בכל המשימות. בטבלה המקורית מופיעות גם סטיות תקן."},
+   2:{cap:"טבלה 2: ניתוח שונות (ANOVA) – האפקטים העיקריים",
+      head:["מקור השונות","df","F","p"],
+      rows:[["גיל",{v:"3, 72"},{v:"10.31"},{v:".00001"},1],["תכונה",{v:"5, 360"},{v:"121.83"},{v:".00001"},1],["אמצעי הצגה",{v:"1, 72"},{v:"0.59"},{v:".45"}],["סוג כמות",{v:"1, 72"},{v:"1.14"},{v:".29"}],["גיל × תכונה",{v:"15, 360"},{v:"2.83"},{v:".0003"},1]],
+      note:"בצהוב: אפקטים מובהקים. לאינטראקציה גיל × תכונה מבחן שפה (⁦α = .01⁩) לא מצא הבדלים מובהקים. שאר האינטראקציות לא מובהקות."},
+   3:{cap:"טבלה 3 (קטע): אחוז הילדים שענו נכון על תכונה B, לפי אמצעי הצגה וסוג כמות",
+      head:["אמצעי · כמות","8","10","12","14"],
+      rows:[["סיפור · רציפה",5,10,15,35],["סיפור · בדידה",10,10,5,15],["מוחשי · רציפה",15,10,25,50],["מוחשי · בדידה",5,15,5,25],["מספרי · רציפה",20,10,10,30]],
+      note:"דוגמה מתוך הטבלה המלאה (7 תכונות × 5 סוגי משימות). הטבלה המלאה מסוכמת במפת החום בשקף 14."},
+   4:{cap:"טבלה 4 (קטע): שכיחות סוגי הנימוקים בתכונה A (מתוך 100 נימוקים בכל גיל)",
+      head:["נימוק","","8","10","12","14"],
+      rows:[["\"אי אפשר שכולם יקבלו יותר ממי שהביא הכי הרבה\"","+",33,62,55,50],["\"אי אפשר שכולם יקבלו יותר ממה שכל אחד הביא\"","+",25,27,22,10],["\"הממוצע לא יכול להיות גדול מהמקסימום\"","+",0,3,8,36],["\"אם מחברים הרבה כמויות קטנות, כולם יכולים לקבל יותר\"","−",25,6,11,4]],
+      note:"+ = נימוק לתשובה נכונה, − = נימוק לתשובה שגויה. טבלאות 5–10 בנויות באותו אופן לשאר התכונות."}
+  };
+  function cell(v){return typeof v==="object"&&v?v.v:(typeof v==="number"&&v%1!==0||(typeof v==="number"&&T.cur===1)?v.toFixed(2):v)}
+  function show(n){
+    n=Number(n);T.cur=n;var d=T[n],h="<tr>"+d.head.map(function(x,i){return '<th'+(i===0?' class="rh"':'')+'>'+(/^\d+$/.test(x)?"גיל "+x:x)+'</th>'}).join("")+"</tr>";
+    d.rows.forEach(function(r){var sig=n===2&&r[4];var cells=n===2?r.slice(0,4):r;
+      h+='<tr'+(sig?' class="sig"':'')+'>'+cells.map(function(v,i){return i===0?'<td class="rh">'+v+'</td>':'<td>'+(v===""?"":cell(v))+'</td>'}).join("")+'</tr>'});
+    $("#tbl-body").innerHTML=h;$("#tbl-cap").textContent=d.cap;$("#tbl-note").textContent=d.note;
+    $$("#tbl-tabs button").forEach(function(b){b.classList.toggle("cur",b.getAttribute("data-t")===String(n))});
+  }
+  $("#tbl-tabs").addEventListener("click",function(e){var b=e.target.closest("button");if(b)show(b.getAttribute("data-t"))});
+  show(1);
+})();
 /* ---------- QR ---------- */
 function drawQR(target){
   try{var q=qrcode(0,"M");q.addData(JOIN_URL);q.make();target.innerHTML=q.createSvgTag({cellSize:8,margin:0})}catch(e){target.textContent="QR"}
