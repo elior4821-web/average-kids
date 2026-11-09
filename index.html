@@ -2631,6 +2631,32 @@ table.mis td b{color:var(--accent);font-family:var(--mono)}
 @media (prefers-reduced-motion:reduce){.pulse{animation:none}}
 .jq-head{display:flex;gap:10px;align-items:center}
 .jq-head .letter{width:34px;height:34px;font-size:1rem}
+.beam svg{max-height:26vh}
+.title-h{font-size:clamp(2rem,min(5vw,8.5vh),4.3rem)}
+@media (max-height:820px){
+  .slide{padding-block:14px 12px}
+  .wrap{gap:12px}
+  h2{font-size:clamp(1.6rem,3vw,2.4rem)}
+  .story{font-size:clamp(1.05rem,1.7vw,1.35rem)}
+  .panel{padding:14px}
+  .srow{padding:5px 12px}
+  .sortboard{gap:5px}
+  .letter{width:34px;height:34px}
+  .qr{width:112px;height:112px}
+  .qr svg{width:96px;height:96px}
+  .opt{padding:5px 10px}
+  .opts{gap:6px}
+  .lead{font-size:1rem}
+}
+@media (max-height:680px){
+  .act-head .lead{display:none}
+  .srow .lbl small{display:none}
+  .beam svg{max-height:20vh}
+  .qr{width:96px;height:96px;padding:6px}
+  .qr svg{width:84px;height:84px}
+  .manual{display:none}
+  h2{font-size:clamp(1.4rem,2.6vw,2rem)}
+}
 </style>
 
 </head>
