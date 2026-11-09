@@ -2670,7 +2670,7 @@ table.mis td b{color:var(--accent);font-family:var(--mono)}
   </div>
   <div class="panel" style="display:flex;flex-direction:column;gap:14px">
     <div class="openbar" data-openbar="hw"></div>
-    <div class="row" style="justify-content:space-between"><div class="row"><b>הכיתה שלנו</b><span class="sample-flag" id="hw-sample" hidden>נתוני דוגמה – יוחלפו בתשובות שלכם</span></div>
+    <div class="row" style="justify-content:space-between"><div class="row"><b>הכיתה שלנו</b><span class="sample-flag" id="hw-sample" hidden>מחכים לתשובות…</span></div>
       <div class="row"><button class="btn sm" id="hw-zero">מה אם נתעלם מהאפסים?</button><button class="btn sm" id="hw-out">הוסיפו ערך קיצון: 12</button></div></div>
     <div class="beam" id="hw-beam"></div>
     <div class="stats" id="hw-stats"></div>
@@ -3326,10 +3326,15 @@ function renderAct(){
 }
 function renderHW(){
   var live=participants().map(function(p){return typeof p.hw==="number"&&isFinite(p.hw)?Math.max(0,Math.min(24,p.hw)):null}).filter(function(v){return v!==null});
-  var vals=live.concat(manual.hw),sample=false;
-  if(!vals.length){vals=SAMPLE_HW.slice();sample=true}
+  var vals=live.concat(manual.hw);
+  $("#hw-sample").hidden=vals.length>0;
+  if(!vals.length){
+    $("#hw-beam").innerHTML=beamSVG([],{min:0,max:12,tick:1});
+    $("#hw-stats").innerHTML='<div class="stat hl"><small>משתתפים</small><b>0</b></div><div class="stat"><small>ממוצע</small><b>–</b></div><div class="stat"><small>ענו 0</small><b>–</b></div><div class="stat"><small>הכי מעט</small><b>–</b></div><div class="stat"><small>הכי הרבה</small><b>–</b></div>';
+    $("#hw-zero").classList.toggle("on",hwZero);$("#hw-out").classList.toggle("on",hwOut);
+    return;
+  }
   if(hwOut)vals=vals.concat([12]);
-  $("#hw-sample").hidden=!sample;
   var all=vals.reduce(function(a,b){return a+b},0)/vals.length;
   var nz=vals.filter(function(v){return v>0}),nzMean=nz.length?nz.reduce(function(a,b){return a+b},0)/nz.length:0;
   var opt={min:0,max:Math.max(12,Math.ceil(Math.max.apply(null,vals))),tick:1,label:"ממוצע ",hl:hwOut?function(v){return v===12}:null};
